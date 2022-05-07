@@ -32,10 +32,10 @@ let clients = {}
 // Socket app msgs
 ioServer.on('connection', (client) => {
     console.log(
-        `User ${client.id} connected, there are currently ${ioServer.engine.clientsCount} users connected`
+        `User ${client.id} connected, Total: ${ioServer.engine.clientsCount} users connected`
     )
 
-    //Add a new client indexed by his id
+    //Add a new client indexed by their id
     clients[client.id] = {
         position: [0, 0, 0],
         rotation: [0, 0, 0],
@@ -55,7 +55,7 @@ ioServer.on('connection', (client) => {
             `User ${client.id} disconnected, there are currently ${ioServer.engine.clientsCount} users connected`
         )
 
-        //Delete this client from the object
+        //Delete ttheir client from the object
         delete clients[client.id]
 
         ioServer.sockets.emit('move', clients)
