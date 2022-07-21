@@ -3,8 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Text, Stats } from '@react-three/drei'
 import { MeshNormalMaterial, BoxBufferGeometry } from 'three'
 import { io } from 'socket.io-client'
-
-import './App.css'
+import '../styles/App.css'
 
 const ControlsWrapper = ({ socket }) => {
     const controlsRef = useRef()
@@ -59,7 +58,7 @@ const UserWrapper = ({ position, rotation, id }) => {
             {/* Optionally show the ID above the user's mesh */}
             <Text
                 position={[0, 1.0, 0]}
-                color="black"
+                color="white"
                 anchorX="center"
                 anchorY="middle"
             >
@@ -69,7 +68,7 @@ const UserWrapper = ({ position, rotation, id }) => {
     )
 }
 
-function App() {
+function Lobby() {
     const [socketClient, setSocketClient] = useState(null)
     const [clients, setClients] = useState({})
 
@@ -105,7 +104,6 @@ function App() {
                         const { position, rotation } = clients[client]
                         return (
                             <UserWrapper
-                                key={client}
                                 id={client}
                                 position={position}
                                 rotation={rotation}
@@ -117,4 +115,4 @@ function App() {
     )
 }
 
-export default App
+export default Lobby
