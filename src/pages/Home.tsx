@@ -14,7 +14,12 @@ const Home = () => {
             <div className="projects-card bg-blur">
               <button className="poly-wallet" onClick={() => window.open("/play/","_self")}><h3>PLAY</h3></button>
               <div>
-                <h4>Free to play Alpha!</h4></div>
+                <h4>Free to play Mutliplayer!</h4></div>
+              </div>
+            <div className="projects-card bg-blur">
+              <button className="poly-wallet" onClick={() => window.open("/solo/","_self")}><h3>PLAY</h3></button>
+              <div>
+                <h4>Free to play SOLO!</h4></div>
               </div>
             <div className="projects-card bg-blur">
               <button className="poly-wallet" onClick={() => window.open("https://darkmoon.dev","_")}><h3>MARKET</h3></button>

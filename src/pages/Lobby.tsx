@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Text, Stats } from '@react-three/drei'
 import { MeshNormalMaterial, BoxBufferGeometry } from 'three'
 import { io } from 'socket.io-client'
+import {KeyDisplay} from "../components/utils"
 import '../styles/App.css'
 
 const ControlsWrapper = ({ socket }) => {
@@ -96,7 +97,6 @@ function Lobby() {
                 <Stats />
                 <ControlsWrapper socket={socketClient} />
                 <gridHelper rotation={[0, 0, 0]} />
-
                 {/* Filter myself from the client list and create user boxes with IDs */}
                 {Object.keys(clients)
                     .filter((clientKey) => clientKey !== socketClient.id)
