@@ -8,6 +8,7 @@
     },
     "dependencies": {
         "@splinetool/react-spline": "^2.2.1",
+        "@splinetool/runtime": "^0.9.82",
         "express": "^4.17.1",
         "express-promise-router": "^4.1.0",
         "prettier": "^2.4.1",

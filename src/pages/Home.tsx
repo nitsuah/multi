@@ -8,28 +8,45 @@ const SPLINE_SCENE = `https://prod.spline.design/lwFGUGO5nCfnnDQU/scene.splineco
 
 const Home = () => {
 
-return (
-    <div className="App">
-      <div className="header left">
-        <h1>DARKMOON🌑ABOUT</h1>
-      </div>
-      <div className="form-container">
-					<Spline scene={SPLINE_SCENE}/>
-				</div>
+  const renderHome = () => (
+        <div className="container">
           <div className="projects-container">
             <div className="projects-card bg-blur">
               <button className="poly-wallet" onClick={() => window.open("/play/","_self")}><h3>PLAY</h3></button>
-              <h4>Free to play during the Alpha!</h4>
+              <div>
+                <h4>Free to play Alpha!</h4></div>
+              </div>
+            <div className="projects-card bg-blur">
+              <button className="poly-wallet" onClick={() => window.open("https://darkmoon.dev","_")}><h3>MARKET</h3></button>
+              <div>
+              <h4>Proceeds will go to opensource software we source.</h4>
+              </div>
             </div>
             <div className="projects-card bg-blur">
-              <button className="poly-wallet" onClick={() => window.open("/","_self")}><h3>MARKET</h3></button><h4>Proceeds will fund opensourced software we used in our repo.</h4> 
+              <button className="neutral-wallet"><h3>MINT</h3></button>
+              <div>
+              <p>The Mint contract will fund projects directly.</p>
+              </div>
             </div>
-            <div className="projects-card bg-blur">
-              <button className="mint-button" disabled><h3>MINT</h3></button><p>A contract will be developed to fund those projects directly from minting.</p>
-            </div>
-            </div>
-            <Footer />
         </div>
+      </div>
+  );
+
+return (
+    		<div className="App">
+        <div className="container">
+        <div className="header">
+            <h2>PLAY🌑DARKMOON</h2>
+          </div>
+            <Spline scene={SPLINE_SCENE} />
+          <div className="middle-row">
+            {renderHome()}
+          </div>
+          <div className="footer-container">
+					  <Footer />
+				  </div>
+        </div>
+      </div>
     );
 };
 
