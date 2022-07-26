@@ -7,7 +7,6 @@ import {KeyDisplay} from "../components/utils"
 import '../styles/App.css'
 import { CharacterControls } from '../components/characterControls';
 import * as THREE from 'three'
-import { CameraHelper } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 

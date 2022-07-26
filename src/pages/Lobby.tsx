@@ -3,7 +3,6 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Text, Stats } from '@react-three/drei'
 import { MeshNormalMaterial, BoxBufferGeometry } from 'three'
 import { io } from 'socket.io-client'
-import {KeyDisplay} from "../components/utils"
 import Footer from "../components/Footer"
 import '../styles/App.css'
 
