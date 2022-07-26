@@ -23,8 +23,8 @@ export class KeyDisplay {
         this.map.set(SHIFT, shift)
 
         this.map.forEach( (v, k) => {
-            v.style.color = 'blue'
-            v.style.fontSize = '50px'
+            v.style.color = 'purple'
+            v.style.fontSize = '10px'
             v.style.fontWeight = '800'
             v.style.position = 'absolute'
             v.textContent = k
@@ -59,7 +59,7 @@ export class KeyDisplay {
 
     public up (key: string) {
         if (this.map.get(key.toLowerCase())) {
-            this.map.get(key.toLowerCase()).style.color = 'blue'
+            this.map.get(key.toLowerCase()).style.color = 'purple'
         }
     }
 

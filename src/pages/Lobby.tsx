@@ -4,6 +4,7 @@ import { OrbitControls, Text, Stats } from '@react-three/drei'
 import { MeshNormalMaterial, BoxBufferGeometry } from 'three'
 import { io } from 'socket.io-client'
 import {KeyDisplay} from "../components/utils"
+import Footer from "../components/Footer"
 import '../styles/App.css'
 
 const ControlsWrapper = ({ socket }) => {
@@ -93,7 +94,7 @@ function Lobby() {
 
     return (
         socketClient && (
-            <Canvas camera={{ position: [0, 1, -5], near: 0.1, far: 1000 }}>
+            <div className="App"><Canvas camera={{ position: [0, 1, -5], near: 0.1, far: 1000 }}>
                 <Stats />
                 <ControlsWrapper socket={socketClient} />
                 <gridHelper rotation={[0, 0, 0]} />
@@ -111,6 +112,7 @@ function Lobby() {
                         )
                     })}
             </Canvas>
+            <Footer/></div>
         )
     )
 }
