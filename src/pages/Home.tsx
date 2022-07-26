@@ -12,12 +12,12 @@ const Home = () => {
         <div className="container">
           <div className="projects-container">
             <div className="projects-card bg-blur">
-              <button className="poly-wallet" onClick={() => window.open("/play/","_self")}><h3>PLAY</h3></button>
+              <button className="poly-wallet" onClick={() => window.open("/play","_self")}><h3>PLAY</h3></button>
               <div>
                 <h4>Free to play Mutliplayer!</h4></div>
               </div>
             <div className="projects-card bg-blur">
-              <button className="poly-wallet" onClick={() => window.open("/solo/","_self")}><h3>PLAY</h3></button>
+              <button className="poly-wallet" onClick={() => window.open("/solo","_self")}><h3>PLAY</h3></button>
               <div>
                 <h4>Free to play SOLO!</h4></div>
               </div>
