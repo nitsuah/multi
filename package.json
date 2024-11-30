@@ -7,10 +7,10 @@
         "format": "prettier --write \"src/*.{js,jsx,json,md,ts,tsx,css}\""
     },
     "dependencies": {
-        "express": "^4.19.2",
+        "express": "^4.21.1",
         "express-promise-router": "^4.1.0",
         "prettier": "^2.4.1",
-        "socket.io": "^4.6.1",
+        "socket.io": "^4.8.1",
         "vite": "^2.9.18"
     },
     "devDependencies": {
