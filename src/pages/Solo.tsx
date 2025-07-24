@@ -74,25 +74,40 @@ const UserWrapper = ({ position, rotation, id }) => {
 function Solo() {
     const [socketClient, setSocketClient] = useState(null)
     const [clients, setClients] = useState({})
-    // SCENE
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xa8def0);
+    // References for scene, camera, and renderer
+    const sceneRef = useRef(null);
+    const cameraRef = useRef(null);
+    const rendererRef = useRef(null);
 
-// CAMERA
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    useEffect(() => {
+        // SCENE
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xa8def0);
+        sceneRef.current = scene;
 
-// RENDERER
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+        // CAMERA
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        cameraRef.current = camera;
 
-// CONTROLS
-const orbitControls = new OrbitControls(camera, renderer.domElement);
-orbitControls.enableDamping = true
-orbitControls.minDistance = 5
-orbitControls.maxDistance = 15
-orbitControls.enablePan = false
-orbitControls.maxPolarAngle = Math.PI / 2 - 0.05
+        // RENDERER
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        rendererRef.current = renderer;
+
+        // CONTROLS
+        const orbitControls = new OrbitControls(camera, renderer.domElement);
+        orbitControls.enableDamping = true;
+        orbitControls.minDistance = 5;
+        orbitControls.maxDistance = 15;
+        orbitControls.enablePan = false;
+        orbitControls.maxPolarAngle = Math.PI / 2 - 0.05;
+
+        // Cleanup function
+        return () => {
+            renderer.dispose();
+        };
+    }, []);
 orbitControls.update();
 
 // LIGHTS
