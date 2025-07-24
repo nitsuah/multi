@@ -34,19 +34,17 @@ const ControlsWrapper = ({ socket }) => {
         }
 
         if (controlsRef.current) {
-            setUpdateCallback(
-                controlsRef.current.addEventListener('change', onControlsChange)
-            )
+            controlsRef.current.addEventListener('change', onControlsChange)
         }
 
         // Dispose
         return () => {
-            if (updateCallback && controlsRef.current)
+            if (controlsRef.current) {
                 controlsRef.current.removeEventListener(
                     'change',
                     onControlsChange
                 )
-        }
+            }
     }, [controlsRef, socket])
 
     return <OrbitControls ref={controlsRef} />
