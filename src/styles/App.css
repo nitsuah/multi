@@ -1,3 +1,63 @@
+/* Accessibility: Focus styles for buttons and links */
+button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:focus {
+  outline: 2px solid #ff8c7f;
+  outline-offset: 2px;
+}
+
+/* Accessibility: Improve color contrast for text on dark backgrounds */
+.footer-text, .projects-card, .header, .title, .subtitle, .mint-item {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Responsive: Adjust layout and font sizes for mobile devices */
+@media (max-width: 600px) {
+  .container {
+    padding: 0 0.5rem;
+  }
+  .header {
+    font-size: 20px;
+    padding: 0.5rem 0;
+    position: static;
+  }
+  .projects-container {
+    margin-top: 2rem;
+  }
+  .projects-card {
+    width: 95%;
+    font-size: 14px;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    flex-direction: column;
+    height: auto;
+  }
+  .middle-row {
+    position: static;
+    left: 0;
+    right: 0;
+    top: 0;
+    margin: 0;
+    width: 100%;
+  }
+  .footer-container {
+    position: static;
+    padding-bottom: 10px;
+  }
+  .App {
+    height: auto;
+    min-height: 100vh;
+  }
+  .mint-item {
+    min-width: 100px;
+    font-size: 14px;
+    padding: 6px 8px;
+  }
+  input {
+    width: 90vw;
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+}
 #root {
   overflow: hidden;
   position: absolute;
