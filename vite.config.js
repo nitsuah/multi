@@ -14,4 +14,11 @@ export default defineConfig({
             brotliSize: true,
         })
     ],
+    // Ensure Vite uses the correct tsconfig for JSX/TSX support
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, 'src'),
+        },
+    },
+    // Remove invalid esbuild tsconfig option; Vite will auto-detect tsconfig
 });

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
+import * as React from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Text, Stats } from '@react-three/drei'
 import { MeshNormalMaterial, BoxGeometry } from 'three';
@@ -79,7 +80,8 @@ const Lobby: React.FC = () => {
 
     useEffect(() => {
         // On mount initialize the socket connection
-        const socket = io();
+    const serverUrl = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_SERVER_URL) || undefined;
+    const socket = io(serverUrl || window.location.origin, { transports: ['websocket'] });
         setSocketClient(socket);
         // Dispose gracefully
         return () => {
