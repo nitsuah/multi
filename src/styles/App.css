@@ -101,7 +101,8 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   position: absolute;
   color: white;
   pointer-events: none;
-  top: 0 px;
+  top: 0;
+  top: 0; /* Removed duplicate declaration */
   width: 100%;
   top: 0;
   margin-left: 0px;
@@ -386,7 +387,8 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   justify-content: center;
   align-items: center;
   position: absolute;
-  bottom: 0 px;
+  bottom: 0;
+  bottom: 0; /* Removed duplicate declaration */
   width: 100%;
   bottom: 0;
   left: 0;
