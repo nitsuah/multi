@@ -222,21 +222,6 @@ export class GameManager {
   getPlayers(): Map<string, Player> {
     return this.players;
   }
-
-  checkTagCollision(player1Id: string, player2Id: string): boolean {
-    const player1 = this.players.get(player1Id);
-    const player2 = this.players.get(player2Id);
-
-    if (!player1 || !player2) return false;
-
-    const pos1 = new THREE.Vector3(...player1.position);
-    const pos2 = new THREE.Vector3(...player2.position);
-
-    return pos1.distanceTo(pos2) < 1.0; // Tag distance
-  }
 }
-
-// Import Three.js for Vector3
-import * as THREE from "three";
 
 export default GameManager;

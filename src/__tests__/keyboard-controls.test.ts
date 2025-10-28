@@ -59,7 +59,7 @@ describe('Keyboard Controls', () => {
       keyDisplay = new KeyDisplay();
 
       keyDisplay.map.forEach(element => {
-        expect(element.style.color).toBe('purple');
+        expect(element.style.color).toBe('rgba(128, 0, 128, 0.7)');
       });
     });
 
@@ -85,30 +85,30 @@ describe('Keyboard Controls', () => {
       keyDisplay = new KeyDisplay();
 
       keyDisplay.down('w');
-      expect(keyDisplay.map.get(W)?.style.color).toBe('red');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('rgba(255, 100, 100, 0.9)');
 
       keyDisplay.down('a');
-      expect(keyDisplay.map.get(A)?.style.color).toBe('red');
+      expect(keyDisplay.map.get(A)?.style.color).toBe('rgba(255, 100, 100, 0.9)');
     });
 
     it('should change color back to purple on key up', () => {
       keyDisplay = new KeyDisplay();
 
       keyDisplay.down('w');
-      expect(keyDisplay.map.get(W)?.style.color).toBe('red');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('rgba(255, 100, 100, 0.9)');
 
       keyDisplay.up('w');
-      expect(keyDisplay.map.get(W)?.style.color).toBe('purple');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('rgba(128, 0, 128, 0.7)');
     });
 
     it('should handle uppercase key input', () => {
       keyDisplay = new KeyDisplay();
 
       keyDisplay.down('W');
-      expect(keyDisplay.map.get(W)?.style.color).toBe('red');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('rgba(255, 100, 100, 0.9)');
 
       keyDisplay.up('W');
-      expect(keyDisplay.map.get(W)?.style.color).toBe('purple');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('rgba(128, 0, 128, 0.7)');
     });
 
     it('should handle invalid keys gracefully', () => {
@@ -121,12 +121,12 @@ describe('Keyboard Controls', () => {
     it('should update positions based on window size', () => {
       keyDisplay = new KeyDisplay();
 
-      const originalHeight = window.innerHeight;
+      const bottomY = window.innerHeight - 80;
       const wElement = keyDisplay.map.get(W);
       const aElement = keyDisplay.map.get(A);
 
-      expect(wElement?.style.top).toBe(`${originalHeight - 150}px`);
-      expect(aElement?.style.top).toBe(`${originalHeight - 100}px`);
+      expect(wElement?.style.top).toBe(`${bottomY - 30}px`);
+      expect(aElement?.style.top).toBe(`${bottomY}px`);
     });
   });
 
@@ -137,10 +137,10 @@ describe('Keyboard Controls', () => {
       keyDisplay.down('w');
       keyDisplay.down('a');
 
-      expect(keyDisplay.map.get(W)?.style.color).toBe('red');
-      expect(keyDisplay.map.get(A)?.style.color).toBe('red');
-      expect(keyDisplay.map.get(S)?.style.color).toBe('purple');
-      expect(keyDisplay.map.get(D)?.style.color).toBe('purple');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('rgba(255, 100, 100, 0.9)');
+      expect(keyDisplay.map.get(A)?.style.color).toBe('rgba(255, 100, 100, 0.9)');
+      expect(keyDisplay.map.get(S)?.style.color).toBe('rgba(128, 0, 128, 0.7)');
+      expect(keyDisplay.map.get(D)?.style.color).toBe('rgba(128, 0, 128, 0.7)');
     });
 
     it('should handle rapid key press/release', () => {
@@ -151,7 +151,7 @@ describe('Keyboard Controls', () => {
         keyDisplay.up('w');
       }
 
-      expect(keyDisplay.map.get(W)?.style.color).toBe('purple');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('rgba(128, 0, 128, 0.7)');
     });
 
     it('should maintain independent state for each key', () => {
@@ -161,9 +161,9 @@ describe('Keyboard Controls', () => {
       keyDisplay.down('d');
       keyDisplay.up('w');
 
-      expect(keyDisplay.map.get(W)?.style.color).toBe('purple');
-      expect(keyDisplay.map.get(D)?.style.color).toBe('red');
-      expect(keyDisplay.map.get(A)?.style.color).toBe('purple');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('rgba(128, 0, 128, 0.7)');
+      expect(keyDisplay.map.get(D)?.style.color).toBe('rgba(255, 100, 100, 0.9)');
+      expect(keyDisplay.map.get(A)?.style.color).toBe('rgba(128, 0, 128, 0.7)');
     });
   });
 });

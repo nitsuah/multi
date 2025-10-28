@@ -19,6 +19,7 @@ import "../styles/App.css";
 
 const RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY = 1000; // Start with 1 second
+const MAX_CHAT_MESSAGES = 50;
 
 interface ChatMessage {
   id: string;
@@ -565,7 +566,7 @@ const Solo: React.FC = () => {
     });
 
     socketClient.on("chat-message", (message: ChatMessage) => {
-      setChatMessages((prev) => [...prev.slice(-49), message]); // Keep last 50 messages
+      setChatMessages((prev) => [...prev.slice(-(MAX_CHAT_MESSAGES - 1)), message]); // Keep last 50 messages
     });
 
     // Game-related socket events
@@ -609,7 +610,7 @@ const Solo: React.FC = () => {
     };
 
     // Add to local messages immediately for responsive UI
-    setChatMessages((prev) => [...prev.slice(-49), chatMessage]);
+    setChatMessages((prev) => [...prev.slice(-(MAX_CHAT_MESSAGES - 1)), chatMessage]);
 
     // Emit to server
     socketClient.emit("chat-message", chatMessage);

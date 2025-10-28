@@ -94,8 +94,8 @@ describe("HelpModal Component", () => {
       render(<HelpModal />);
       fireEvent.keyDown(window, { key: "h" });
 
-      expect(screen.getByText("Multiplayer")).toBeDefined();
-      expect(screen.getByText("Your character is the blue box")).toBeDefined();
+      expect(screen.getByText("Multiplayer & Games")).toBeDefined();
+      expect(screen.getByText("Your character is the blue box (red when \"IT\")")).toBeDefined();
     });
 
     it("should show keyboard keys as kbd elements", () => {
