@@ -14,13 +14,18 @@ interface ControlsWrapperProps {
 }
 
 const ControlsWrapper = ({ socket }: ControlsWrapperProps) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const controlsRef = useRef<any>(null);
+    const controlsRef = useRef(null);
 
     useEffect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const onControlsChange = (val: any) => {
-            const { position, rotation } = val.target.object;
+        const onControlsChange = () => {
+            if (!controlsRef.current) return;
+            const controls = controlsRef.current as unknown as { 
+                object: { 
+                    position: { toArray: (arr: number[]) => void };
+                    rotation: { toArray: (arr: number[]) => void };
+                };
+            };
+            const { position, rotation } = controls.object;
             const { id } = socket;
             const posArray: number[] = [];
             const rotArray: number[] = [];
@@ -32,13 +37,13 @@ const ControlsWrapper = ({ socket }: ControlsWrapperProps) => {
                 position: posArray,
             });
         };
-        const current = controlsRef.current as any;
-        if (current && typeof current.addEventListener === 'function') {
-            current.addEventListener('change', onControlsChange);
+        const current = controlsRef.current;
+        if (current) {
+            (current as unknown as EventTarget).addEventListener('change', onControlsChange);
         }
         return () => {
-            if (current && typeof current.removeEventListener === 'function') {
-                current.removeEventListener('change', onControlsChange);
+            if (current) {
+                (current as unknown as EventTarget).removeEventListener('change', onControlsChange);
             }
         };
     }, [socket]);
