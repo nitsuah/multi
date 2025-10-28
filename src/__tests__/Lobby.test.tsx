@@ -8,7 +8,7 @@ import '@testing-library/jest-dom';
 describe('Lobby Page', () => {
   it('renders without crashing', () => {
     render(
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Lobby />
       </BrowserRouter>
     );

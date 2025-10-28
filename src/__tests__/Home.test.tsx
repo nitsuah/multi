@@ -8,7 +8,7 @@ import { BrowserRouter } from 'react-router-dom';
 describe('Home Page', () => {
   it('renders the main header', () => {
     render(
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Home />
       </BrowserRouter>
     );
