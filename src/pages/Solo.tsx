@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Text, Stats, OrbitControls } from "@react-three/drei";
+import { Text, OrbitControls } from "@react-three/drei";
 import { io, Socket } from "socket.io-client";
 import * as THREE from "three";
 import type { Clients } from "../types/socket";
@@ -10,91 +10,253 @@ import QualitySettings, { QualityLevel } from "../components/QualitySettings";
 import ThemeToggle from "../components/ThemeToggle";
 import Tutorial from "../components/Tutorial";
 import HelpModal from "../components/HelpModal";
+import ChatBox from "../components/ChatBox";
+import CollisionSystem from "../components/CollisionSystem";
+import GameManager, { GameState, Player } from "../components/GameManager";
+import GameUI from "../components/GameUI";
 import { KeyDisplay, W, A, S, D, SHIFT } from "../components/utils";
 import "../styles/App.css";
 
 const RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY = 1000; // Start with 1 second
 
+interface ChatMessage {
+  id: string;
+  playerId: string;
+  playerName: string;
+  message: string;
+  timestamp: number;
+}
+
 interface UserWrapperProps {
   position: [number, number, number];
   rotation: [number, number, number];
   id: string;
+  isIt?: boolean;
 }
 
 const UserWrapper: React.FC<UserWrapperProps> = ({
   position,
   rotation,
   id,
+  isIt = false,
 }) => {
   return (
-    <mesh position={position} rotation={rotation}>
-      <boxGeometry />
-      <meshNormalMaterial />
+    <group position={position} rotation={rotation}>
+      <mesh>
+        <boxGeometry />
+        <meshStandardMaterial color={isIt ? "#ff4444" : "#44ff44"} />
+      </mesh>
+
+      {/* Glow effect for 'it' player */}
+      {isIt && (
+        <mesh>
+          <boxGeometry args={[1.2, 1.2, 1.2]} />
+          <meshBasicMaterial color="#ff6666" transparent opacity={0.3} />
+        </mesh>
+      )}
+
       <Text
-        position={[0, 1.0, 0]}
+        position={[0, 1.2, 0]}
         color="white"
         anchorX="center"
         anchorY="middle"
+        fontSize={0.3}
       >
-        {id}
+        {id.slice(-4)}
+        {isIt && " (IT)"}
       </Text>
-    </mesh>
+    </group>
   );
 };
 
 interface PlayerCharacterProps {
   keysPressed: { [key: string]: boolean };
   socketClient: Socket | null;
+  mouseControls: {
+    leftClick: boolean;
+    rightClick: boolean;
+    mouseX: number;
+    mouseY: number;
+  };
+  clients: Clients;
+  gameManager: GameManager | null;
+  currentPlayerId: string;
 }
 
 const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   keysPressed,
   socketClient,
+  mouseControls,
+  clients,
+  gameManager,
+  currentPlayerId,
 }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Group>(null);
   const velocity = useRef(new THREE.Vector3());
   const direction = useRef(new THREE.Vector3());
   const cameraOffset = useRef(new THREE.Vector3(0, 3, -5)); // Camera position relative to player
+  const cameraRotation = useRef({ horizontal: 0, vertical: 0.2 }); // Track camera rotation
+  const previousMouse = useRef({ x: 0, y: 0 });
+  const isFirstMouse = useRef(true);
+  const collisionSystem = useRef(new CollisionSystem());
+  const lastTagCheck = useRef(0);
 
   useFrame((state, delta) => {
     if (!meshRef.current) return;
 
-    // Calculate direction based on keys pressed
-    direction.current.set(0, 0, 0);
-
-    if (keysPressed[W]) direction.current.z += 1;
-    if (keysPressed[S]) direction.current.z -= 1;
-    if (keysPressed[A]) direction.current.x += 1;
-    if (keysPressed[D]) direction.current.x -= 1;
-
-    // Normalize direction
-    if (direction.current.length() > 0) {
-      direction.current.normalize();
-
-      // Apply speed (faster with shift)
-      const speed = keysPressed[SHIFT] ? 5 : 2;
-      velocity.current.copy(direction.current).multiplyScalar(speed * delta);
-
-      // Move the character
-      meshRef.current.position.add(velocity.current);
-
-      // Rotate character to face movement direction
-      if (direction.current.length() > 0) {
-        const angle = Math.atan2(direction.current.x, direction.current.z);
-        meshRef.current.rotation.y = angle;
+    // Handle mouse camera rotation
+    if (mouseControls.leftClick) {
+      if (isFirstMouse.current) {
+        previousMouse.current.x = mouseControls.mouseX;
+        previousMouse.current.y = mouseControls.mouseY;
+        isFirstMouse.current = false;
       }
 
-      // Emit position to server
-      if (socketClient) {
-        socketClient.emit("move", {
-          position: meshRef.current.position.toArray(),
-          rotation: meshRef.current.rotation.toArray(),
-        });
+      const deltaX = mouseControls.mouseX - previousMouse.current.x;
+      const deltaY = mouseControls.mouseY - previousMouse.current.y;
+
+      const sensitivity = 0.002;
+      cameraRotation.current.horizontal -= deltaX * sensitivity;
+      cameraRotation.current.vertical += deltaY * sensitivity;
+
+      // Clamp vertical rotation
+      cameraRotation.current.vertical = Math.max(
+        -Math.PI / 3,
+        Math.min(Math.PI / 3, cameraRotation.current.vertical)
+      );
+
+      previousMouse.current.x = mouseControls.mouseX;
+      previousMouse.current.y = mouseControls.mouseY;
+    } else {
+      isFirstMouse.current = true;
+    }
+
+    // Calculate camera offset based on rotation
+    const distance = 5;
+    const offsetX =
+      Math.sin(cameraRotation.current.horizontal) *
+      Math.cos(cameraRotation.current.vertical) *
+      distance;
+    const offsetY = Math.sin(cameraRotation.current.vertical) * distance + 3;
+    const offsetZ =
+      Math.cos(cameraRotation.current.horizontal) *
+      Math.cos(cameraRotation.current.vertical) *
+      distance;
+
+    cameraOffset.current.set(offsetX, offsetY, offsetZ);
+
+    // Calculate direction based on keys pressed and camera rotation
+    direction.current.set(0, 0, 0);
+
+    if (keysPressed[W] || keysPressed[S] || keysPressed[A] || keysPressed[D]) {
+      // Movement relative to camera direction
+      const forward = new THREE.Vector3();
+      const right = new THREE.Vector3();
+
+      // Calculate forward and right vectors based on camera rotation
+      forward.set(
+        -Math.sin(cameraRotation.current.horizontal),
+        0,
+        -Math.cos(cameraRotation.current.horizontal)
+      );
+      right.set(
+        Math.cos(cameraRotation.current.horizontal),
+        0,
+        -Math.sin(cameraRotation.current.horizontal)
+      );
+
+      if (keysPressed[W]) direction.current.add(forward);
+      if (keysPressed[S]) direction.current.sub(forward);
+      if (keysPressed[A]) direction.current.sub(right);
+      if (keysPressed[D]) direction.current.add(right);
+
+      // Normalize direction
+      if (direction.current.length() > 0) {
+        direction.current.normalize();
+
+        // Apply speed (faster with shift)
+        const speed = keysPressed[SHIFT] ? 5 : 2;
+        velocity.current.copy(direction.current).multiplyScalar(speed * delta);
+
+        // Calculate new position with collision detection
+        const currentPosition = meshRef.current.position.clone();
+        const newPosition = currentPosition.clone().add(velocity.current);
+
+        // Check for collisions and get resolved position
+        const resolvedPosition = collisionSystem.current.checkCollision(
+          currentPosition,
+          newPosition
+        );
+
+        // Check for player-to-player collisions and tagging
+        const myId = socketClient?.id;
+        if (myId && gameManager) {
+          const currentPlayer = gameManager.getPlayers().get(myId);
+          const gameState = gameManager.getGameState();
+          const now = Date.now();
+
+          for (const [clientId, clientData] of Object.entries(clients)) {
+            if (clientId !== myId) {
+              const otherPlayerPos = new THREE.Vector3(...clientData.position);
+              const distance = resolvedPosition.distanceTo(otherPlayerPos);
+
+              // Handle collision
+              if (
+                collisionSystem.current.checkPlayerCollision(
+                  resolvedPosition,
+                  otherPlayerPos
+                )
+              ) {
+                // Simple push-back collision resolution
+                const pushDirection = resolvedPosition
+                  .clone()
+                  .sub(otherPlayerPos)
+                  .normalize();
+                resolvedPosition.add(pushDirection.multiplyScalar(0.1));
+              }
+
+              // Handle tagging (only if current player is 'it' and close enough)
+              if (
+                gameState.isActive &&
+                gameState.mode === "tag" &&
+                currentPlayer?.isIt &&
+                distance < 1.0 &&
+                now - lastTagCheck.current > 1000
+              ) {
+                // 1 second cooldown
+
+                console.log(`Attempting to tag player ${clientId}`);
+                if (gameManager.tagPlayer(myId, clientId)) {
+                  socketClient.emit("player-tagged", {
+                    taggerId: myId,
+                    taggedId: clientId,
+                  });
+                  lastTagCheck.current = now;
+                }
+              }
+            }
+          }
+        }
+
+        // Move the character to resolved position
+        meshRef.current.position.copy(resolvedPosition);
+
+        // Rotate character to face movement direction
+        const angle = Math.atan2(direction.current.x, direction.current.z);
+        meshRef.current.rotation.y = angle;
+
+        // Emit position to server
+        if (socketClient) {
+          socketClient.emit("move", {
+            position: meshRef.current.position.toArray(),
+            rotation: meshRef.current.rotation.toArray(),
+          });
+        }
       }
     }
 
-    // Smooth third-person camera follow
+    // Smooth third-person camera follow with rotation
     const idealCameraPosition = new THREE.Vector3(
       meshRef.current.position.x + cameraOffset.current.x,
       meshRef.current.position.y + cameraOffset.current.y,
@@ -112,11 +274,24 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
     );
   });
 
+  const currentPlayer = gameManager?.getPlayers().get(currentPlayerId);
+  const isIt = currentPlayer?.isIt || false;
+
   return (
-    <mesh ref={meshRef} position={[0, 0.5, 0]} castShadow>
-      <boxGeometry args={[0.5, 1, 0.5]} />
-      <meshStandardMaterial color="#4a90e2" />
-    </mesh>
+    <group ref={meshRef} position={[0, 0.5, 0]}>
+      <mesh castShadow>
+        <boxGeometry args={[0.5, 1, 0.5]} />
+        <meshStandardMaterial color={isIt ? "#ff4444" : "#4a90e2"} />
+      </mesh>
+
+      {/* Glow effect for 'it' player */}
+      {isIt && (
+        <mesh>
+          <boxGeometry args={[0.7, 1.2, 0.7]} />
+          <meshBasicMaterial color="#ff6666" transparent opacity={0.2} />
+        </mesh>
+      )}
+    </group>
   );
 };
 
@@ -129,10 +304,30 @@ const Solo: React.FC = () => {
   const [keysPressed, setKeysPressed] = useState<{ [key: string]: boolean }>(
     {}
   );
+  const [mouseControls, setMouseControls] = useState({
+    leftClick: false,
+    rightClick: false,
+    mouseX: 0,
+    mouseY: 0,
+  });
+  const [chatVisible, setChatVisible] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [gameState, setGameState] = useState<GameState>({
+    mode: "none",
+    isActive: false,
+    timeRemaining: 0,
+    scores: {},
+  });
+  const [gamePlayers, setGamePlayers] = useState<Map<string, Player>>(
+    new Map()
+  );
+  const [currentGameManager, setCurrentGameManager] =
+    useState<GameManager | null>(null);
   const reconnectAttempts = useRef(0);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const keyDisplayRef = useRef<KeyDisplay | null>(null);
   const lastEmitTime = useRef(0);
+  const gameManager = useRef<GameManager | null>(null);
 
   // Quality presets
   const getQualitySettings = (level: QualityLevel) => {
@@ -200,11 +395,37 @@ const Solo: React.FC = () => {
       console.log("Socket connected:", socket.id);
       setIsConnected(true);
       reconnectAttempts.current = 0;
+
+      // Initialize game manager
+      if (!gameManager.current) {
+        const newGameManager = new GameManager();
+        newGameManager.setCallbacks({
+          onGameStateUpdate: setGameState,
+          onPlayerUpdate: setGamePlayers,
+        });
+        gameManager.current = newGameManager;
+        setCurrentGameManager(newGameManager);
+      }
+
+      // Add this player to game manager
+      if (socket.id) {
+        gameManager.current.addPlayer({
+          id: socket.id,
+          name: `Player ${socket.id.slice(-4)}`,
+          position: [0, 0.5, 0],
+          rotation: [0, 0, 0],
+        });
+      }
     });
 
     socket.on("disconnect", (reason) => {
       console.log("Socket disconnected:", reason);
       setIsConnected(false);
+
+      // Remove player from game manager
+      if (gameManager.current && socket.id) {
+        gameManager.current.removePlayer(socket.id);
+      }
 
       // Attempt manual reconnection with exponential backoff
       if (reason === "io server disconnect" || reason === "transport close") {
@@ -236,35 +457,84 @@ const Solo: React.FC = () => {
     console.log("Setting up keyboard controls");
     keyDisplayRef.current = new KeyDisplay();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleKeyDown = (e: any) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       console.log("Key down:", key);
-      if ([W, A, S, D, SHIFT].includes(key)) {
+
+      // Handle chat toggle
+      if (key === "c" && !chatVisible) {
+        setChatVisible(true);
+        return;
+      }
+
+      // Only process movement keys if chat is not visible
+      if (!chatVisible && [W, A, S, D, SHIFT].includes(key)) {
         e.preventDefault(); // Prevent default browser behavior
         setKeysPressed((prev) => ({ ...prev, [key]: true }));
         keyDisplayRef.current?.down(key);
       }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleKeyUp = (e: any) => {
+    const handleKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       console.log("Key up:", key);
-      if ([W, A, S, D, SHIFT].includes(key)) {
+
+      // Only process movement keys if chat is not visible
+      if (!chatVisible && [W, A, S, D, SHIFT].includes(key)) {
         e.preventDefault();
         setKeysPressed((prev) => ({ ...prev, [key]: false }));
         keyDisplayRef.current?.up(key);
       }
     };
 
+    const handleMouseDown = (e: MouseEvent) => {
+      // Prevent default context menu on right-click
+      if (e.button === 2) {
+        e.preventDefault();
+      }
+
+      setMouseControls((prev) => ({
+        ...prev,
+        leftClick: e.button === 0 ? true : prev.leftClick,
+        rightClick: e.button === 2 ? true : prev.rightClick,
+      }));
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      setMouseControls((prev) => ({
+        ...prev,
+        leftClick: e.button === 0 ? false : prev.leftClick,
+        rightClick: e.button === 2 ? false : prev.rightClick,
+      }));
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      setMouseControls((prev) => ({
+        ...prev,
+        mouseX: e.clientX,
+        mouseY: e.clientY,
+      }));
+    };
+
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault(); // Disable right-click context menu
+    };
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("contextmenu", handleContextMenu);
 
     return () => {
-      console.log("Cleaning up keyboard controls");
+      console.log("Cleaning up keyboard and mouse controls");
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("contextmenu", handleContextMenu);
       // Clean up KeyDisplay elements
       if (keyDisplayRef.current) {
         [W, A, S, D, SHIFT].forEach((key) => {
@@ -275,17 +545,108 @@ const Solo: React.FC = () => {
         });
       }
     };
-  }, []);
+  }, [chatVisible]);
 
   useEffect(() => {
     if (!socketClient) return;
+
     socketClient.on("move", (clients: Clients) => {
       setClients(clients);
+
+      // Update game manager with player positions
+      if (gameManager.current) {
+        Object.entries(clients).forEach(([id, data]) => {
+          gameManager.current?.updatePlayer(id, {
+            position: data.position,
+            rotation: data.rotation,
+          });
+        });
+      }
     });
+
+    socketClient.on("chat-message", (message: ChatMessage) => {
+      setChatMessages((prev) => [...prev.slice(-49), message]); // Keep last 50 messages
+    });
+
+    // Game-related socket events
+    socketClient.on(
+      "game-start",
+      (gameData: { mode: string; duration: number }) => {
+        console.log("Game started:", gameData);
+        if (gameManager.current) {
+          gameManager.current.startTagGame(gameData.duration);
+        }
+      }
+    );
+
+    socketClient.on(
+      "player-tagged",
+      (data: { taggerId: string; taggedId: string }) => {
+        console.log("Player tagged:", data);
+        if (gameManager.current) {
+          gameManager.current.tagPlayer(data.taggerId, data.taggedId);
+        }
+      }
+    );
+
     return () => {
       socketClient.off("move");
+      socketClient.off("chat-message");
+      socketClient.off("game-start");
+      socketClient.off("player-tagged");
     };
   }, [socketClient]);
+
+  const handleSendMessage = (message: string) => {
+    if (!socketClient || !isConnected) return;
+
+    const chatMessage: ChatMessage = {
+      id: Date.now().toString(),
+      playerId: socketClient.id || "unknown",
+      playerName: `Player ${socketClient.id?.slice(-4) || "????"}`,
+      message,
+      timestamp: Date.now(),
+    };
+
+    // Add to local messages immediately for responsive UI
+    setChatMessages((prev) => [...prev.slice(-49), chatMessage]);
+
+    // Emit to server
+    socketClient.emit("chat-message", chatMessage);
+  };
+
+  const toggleChat = () => {
+    setChatVisible(!chatVisible);
+  };
+
+  const handleStartGame = (mode: string) => {
+    if (!socketClient || !gameManager.current) return;
+
+    if (mode === "tag") {
+      const started = gameManager.current.startTagGame(180); // 3 minutes
+      if (started) {
+        socketClient.emit("game-start", { mode: "tag", duration: 180 });
+      }
+    }
+  };
+
+  const handleEndGame = () => {
+    if (!socketClient || !gameManager.current) return;
+
+    gameManager.current.endGame();
+    socketClient.emit("game-end");
+  };
+
+  // Update game timer
+  useEffect(() => {
+    if (!gameState.isActive || !gameManager.current) return;
+
+    const interval = setInterval(() => {
+      gameManager.current!.updateGameTimer(1); // 1 second
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [gameState.isActive]);
 
   // Emit position updates (throttled to 50ms)
   useEffect(() => {
@@ -312,29 +673,46 @@ const Solo: React.FC = () => {
       <ThemeToggle />
       <PerformanceMonitor onPerformanceChange={setCurrentFPS} />
       <QualitySettings onChange={setQuality} currentFPS={currentFPS} />
-      {!isConnected && (
-        <div
-          style={{
-            position: "fixed",
-            top: "20px",
-            right: "20px",
-            padding: "10px 20px",
-            backgroundColor: "rgba(255, 0, 0, 0.8)",
-            color: "white",
-            borderRadius: "4px",
-            zIndex: 1000,
-          }}
-        >
-          Disconnected - Reconnecting...
-        </div>
-      )}
+      <ChatBox
+        isVisible={chatVisible}
+        onToggle={toggleChat}
+        messages={chatMessages}
+        onSendMessage={handleSendMessage}
+        currentPlayerId={socketClient?.id || ""}
+      />
+      <GameUI
+        gameState={gameState}
+        players={gamePlayers}
+        currentPlayerId={socketClient?.id || ""}
+        onStartGame={handleStartGame}
+        onEndGame={handleEndGame}
+      />
+
+      {/* Connection Status - Always show, centered at top */}
+      <div
+        style={{
+          position: "fixed",
+          top: "20px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "6px 12px",
+          backgroundColor: "rgba(128, 128, 128, 0.5)",
+          color: "rgba(255, 255, 255, 0.7)",
+          borderRadius: "4px",
+          zIndex: 1000,
+          pointerEvents: "none", // Click-through
+          fontSize: "12px",
+          fontFamily: "monospace",
+        }}
+      >
+        Solo Mode - Offline
+      </div>
       <Canvas
         camera={{ position: [0, 3, -5], near: 0.1, far: 1000 }}
         shadows={qualitySettings.shadows}
         dpr={qualitySettings.pixelRatio}
         gl={{ antialias: qualitySettings.antialias }}
       >
-        <Stats />
         <OrbitControls enabled={false} />
         <ambientLight intensity={0.7} />
         <directionalLight
@@ -345,20 +723,65 @@ const Solo: React.FC = () => {
           shadow-mapSize-height={qualitySettings.shadows ? 4096 : 512}
         />
         <gridHelper rotation={[0, 0, 0]} />
+
+        {/* Environment Obstacles */}
+        {/* Central pillar */}
+        <mesh position={[0, 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[4, 4, 4]} />
+          <meshStandardMaterial color="#666666" />
+        </mesh>
+
+        {/* Corner obstacles */}
+        <mesh position={[17.5, 1.5, 17.5]} castShadow receiveShadow>
+          <boxGeometry args={[5, 3, 5]} />
+          <meshStandardMaterial color="#4a4a4a" />
+        </mesh>
+
+        <mesh position={[-17.5, 1.5, -17.5]} castShadow receiveShadow>
+          <boxGeometry args={[5, 3, 5]} />
+          <meshStandardMaterial color="#4a4a4a" />
+        </mesh>
+
+        <mesh position={[17.5, 1.5, -17.5]} castShadow receiveShadow>
+          <boxGeometry args={[5, 3, 5]} />
+          <meshStandardMaterial color="#4a4a4a" />
+        </mesh>
+
+        <mesh position={[-17.5, 1.5, 17.5]} castShadow receiveShadow>
+          <boxGeometry args={[5, 3, 5]} />
+          <meshStandardMaterial color="#4a4a4a" />
+        </mesh>
+
+        {/* Ground plane for better visibility */}
+        <mesh
+          position={[0, -0.1, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          receiveShadow
+        >
+          <planeGeometry args={[100, 100]} />
+          <meshStandardMaterial color="#2a2a2a" />
+        </mesh>
+
         <PlayerCharacter
           keysPressed={keysPressed}
           socketClient={socketClient}
+          mouseControls={mouseControls}
+          clients={clients}
+          gameManager={currentGameManager}
+          currentPlayerId={socketClient?.id || ""}
         />
         {Object.keys(clients)
           .filter((clientKey) => socketClient && clientKey !== socketClient.id)
           .map((client) => {
             const { position, rotation } = clients[client];
+            const player = gamePlayers.get(client);
             return (
               <UserWrapper
                 key={client}
                 id={client}
                 position={position}
                 rotation={rotation}
+                isIt={player?.isIt || false}
               />
             );
           })}

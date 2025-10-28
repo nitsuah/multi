@@ -6,8 +6,7 @@ const HelpModal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleKeyPress = (e: any) => {
+    const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "h") {
         setIsOpen((prev) => !prev);
       }
@@ -68,23 +67,40 @@ const HelpModal: React.FC = () => {
           </section>
 
           <section className="help-section">
+            <h3>Camera</h3>
+            <ul>
+              <li>
+                <kbd>Left Click + Drag</kbd> Rotate camera around player
+              </li>
+              <li>Camera follows your movement smoothly</li>
+            </ul>
+          </section>
+
+          <section className="help-section">
             <h3>Interface</h3>
             <ul>
               <li>
                 <kbd>H</kbd> Toggle this help menu
               </li>
-              <li>☀️/🌙 Toggle dark/light theme (top-left)</li>
+              <li>
+                <kbd>C</kbd> Toggle chat
+              </li>
+              <li>☀️/🌙 Toggle dark/light theme (bottom-left)</li>
               <li>⚙️ Adjust graphics quality (top-right)</li>
-              <li>FPS counter in top-right corner</li>
+              <li>Performance monitor in top-left corner</li>
             </ul>
           </section>
 
           <section className="help-section">
-            <h3>Multiplayer</h3>
+            <h3>Multiplayer & Games</h3>
             <ul>
-              <li>Your character is the blue box</li>
-              <li>Other players appear as colored boxes</li>
-              <li>Movement is synchronized in real-time</li>
+              <li>Your character is the blue box (red when &quot;IT&quot;)</li>
+              <li>
+                Other players appear as green boxes (red when &quot;IT&quot;)
+              </li>
+              <li>Start Tag game with 2+ players</li>
+              <li>Walk into other players to tag them</li>
+              <li>Chat with other players in real-time</li>
             </ul>
           </section>
         </div>
