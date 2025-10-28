@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: multi-websocket-server
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        fromGroup: web
+      - key: ALLOWED_ORIGINS
+        value: https://darkmoon-dev.netlify.app,https://deploy-preview-*--darkmoon-dev.netlify.app
+    healthCheckPath: /health

@@ -22,10 +22,14 @@ router.get('/health', (req, res) => {
     })
 })
 
-// Main route serves the index HTML
+// Main route for production - simple status page
 router.get('/', async (req, res, next) => {
-    let html = fs.readFileSync('index.html', 'utf-8')
-    res.send(html)
+    res.json({ 
+        service: 'Multi WebSocket Server',
+        status: 'running',
+        connections: ioServer ? ioServer.engine.clientsCount : 0,
+        timestamp: new Date().toISOString()
+    })
 })
 
 // Everything else that's not index 404s
