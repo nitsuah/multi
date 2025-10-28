@@ -1,0 +1,169 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { KeyDisplay, W, A, S, D, SHIFT, DIRECTIONS } from '../components/utils';
+
+/**
+ * Tests for keyboard controls and KeyDisplay component
+ */
+
+describe('Keyboard Controls', () => {
+  let keyDisplay: KeyDisplay;
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    // Create a container for the key display elements
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    // Clean up
+    if (container && container.parentNode) {
+      container.parentNode.removeChild(container);
+    }
+    // Remove any key display elements
+    document.querySelectorAll('[style*="position: absolute"]').forEach(el => {
+      if (el.textContent && DIRECTIONS.includes(el.textContent as string)) {
+        el.remove();
+      }
+    });
+  });
+
+  describe('Key Constants', () => {
+    it('should define all direction keys', () => {
+      expect(W).toBe('w');
+      expect(A).toBe('a');
+      expect(S).toBe('s');
+      expect(D).toBe('d');
+      expect(SHIFT).toBe('shift');
+    });
+
+    it('should include all direction keys in DIRECTIONS array', () => {
+      expect(DIRECTIONS).toEqual(['w', 'a', 's', 'd']);
+      expect(DIRECTIONS).toHaveLength(4);
+    });
+  });
+
+  describe('KeyDisplay Component', () => {
+    it('should create display elements for all keys', () => {
+      keyDisplay = new KeyDisplay();
+
+      expect(keyDisplay.map.size).toBe(5);
+      expect(keyDisplay.map.has(W)).toBe(true);
+      expect(keyDisplay.map.has(A)).toBe(true);
+      expect(keyDisplay.map.has(S)).toBe(true);
+      expect(keyDisplay.map.has(D)).toBe(true);
+      expect(keyDisplay.map.has(SHIFT)).toBe(true);
+    });
+
+    it('should set initial color to purple', () => {
+      keyDisplay = new KeyDisplay();
+
+      keyDisplay.map.forEach(element => {
+        expect(element.style.color).toBe('purple');
+      });
+    });
+
+    it('should position elements absolutely', () => {
+      keyDisplay = new KeyDisplay();
+
+      keyDisplay.map.forEach(element => {
+        expect(element.style.position).toBe('absolute');
+      });
+    });
+
+    it('should display correct key labels', () => {
+      keyDisplay = new KeyDisplay();
+
+      expect(keyDisplay.map.get(W)?.textContent).toBe('w');
+      expect(keyDisplay.map.get(A)?.textContent).toBe('a');
+      expect(keyDisplay.map.get(S)?.textContent).toBe('s');
+      expect(keyDisplay.map.get(D)?.textContent).toBe('d');
+      expect(keyDisplay.map.get(SHIFT)?.textContent).toBe('shift');
+    });
+
+    it('should change color to red on key down', () => {
+      keyDisplay = new KeyDisplay();
+
+      keyDisplay.down('w');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('red');
+
+      keyDisplay.down('a');
+      expect(keyDisplay.map.get(A)?.style.color).toBe('red');
+    });
+
+    it('should change color back to purple on key up', () => {
+      keyDisplay = new KeyDisplay();
+
+      keyDisplay.down('w');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('red');
+
+      keyDisplay.up('w');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('purple');
+    });
+
+    it('should handle uppercase key input', () => {
+      keyDisplay = new KeyDisplay();
+
+      keyDisplay.down('W');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('red');
+
+      keyDisplay.up('W');
+      expect(keyDisplay.map.get(W)?.style.color).toBe('purple');
+    });
+
+    it('should handle invalid keys gracefully', () => {
+      keyDisplay = new KeyDisplay();
+
+      expect(() => keyDisplay.down('x')).not.toThrow();
+      expect(() => keyDisplay.up('x')).not.toThrow();
+    });
+
+    it('should update positions based on window size', () => {
+      keyDisplay = new KeyDisplay();
+
+      const originalHeight = window.innerHeight;
+      const wElement = keyDisplay.map.get(W);
+      const aElement = keyDisplay.map.get(A);
+
+      expect(wElement?.style.top).toBe(`${originalHeight - 150}px`);
+      expect(aElement?.style.top).toBe(`${originalHeight - 100}px`);
+    });
+  });
+
+  describe('Keyboard Event Integration', () => {
+    it('should track multiple simultaneous key presses', () => {
+      keyDisplay = new KeyDisplay();
+
+      keyDisplay.down('w');
+      keyDisplay.down('a');
+
+      expect(keyDisplay.map.get(W)?.style.color).toBe('red');
+      expect(keyDisplay.map.get(A)?.style.color).toBe('red');
+      expect(keyDisplay.map.get(S)?.style.color).toBe('purple');
+      expect(keyDisplay.map.get(D)?.style.color).toBe('purple');
+    });
+
+    it('should handle rapid key press/release', () => {
+      keyDisplay = new KeyDisplay();
+
+      for (let i = 0; i < 10; i++) {
+        keyDisplay.down('w');
+        keyDisplay.up('w');
+      }
+
+      expect(keyDisplay.map.get(W)?.style.color).toBe('purple');
+    });
+
+    it('should maintain independent state for each key', () => {
+      keyDisplay = new KeyDisplay();
+
+      keyDisplay.down('w');
+      keyDisplay.down('d');
+      keyDisplay.up('w');
+
+      expect(keyDisplay.map.get(W)?.style.color).toBe('purple');
+      expect(keyDisplay.map.get(D)?.style.color).toBe('red');
+      expect(keyDisplay.map.get(A)?.style.color).toBe('purple');
+    });
+  });
+});
