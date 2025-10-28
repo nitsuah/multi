@@ -57,7 +57,7 @@ export default [
       ...jsxA11y.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
-      'react/no-unknown-property': ['error', { ignore: ['position', 'rotation', 'geometry', 'material', 'intensity', 'castShadow', 'shadow-mapSize-width', 'shadow-mapSize-height'] }],
+      'react/no-unknown-property': ['error', { ignore: ['position', 'rotation', 'geometry', 'material', 'intensity', 'castShadow', 'shadow-mapSize-width', 'shadow-mapSize-height', 'args'] }],
       'react-hooks/set-state-in-effect': 'off',
     },
     settings: {
