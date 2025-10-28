@@ -134,7 +134,7 @@ const GameUI: React.FC<GameUIProps> = ({
         Players: {players.size}
       </div>
 
-      {players.size >= 2 ? (
+      {players.size >= 2 || players.size === 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <button
             onClick={() => onStartGame("tag")}
@@ -148,11 +148,13 @@ const GameUI: React.FC<GameUIProps> = ({
               fontSize: "12px",
             }}
           >
-            Start Tag Game
+            Start Tag Game {players.size === 0 ? "(Solo Practice)" : ""}
           </button>
 
           <div style={{ fontSize: "10px", color: "#888", textAlign: "center" }}>
-            3 minute rounds • Tag to pass
+            {players.size === 0
+              ? "Practice mode • No opponents"
+              : "3 minute rounds • Tag to pass"}
           </div>
         </div>
       ) : (

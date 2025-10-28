@@ -7,6 +7,12 @@ const HelpModal: React.FC = () => {
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input field
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+        return;
+      }
+
       if (e.key.toLowerCase() === "h") {
         setIsOpen((prev) => !prev);
       }

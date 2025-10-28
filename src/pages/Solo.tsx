@@ -243,6 +243,17 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
         // Move the character to resolved position
         meshRef.current.position.copy(resolvedPosition);
 
+        // Debug: Log position changes
+        if (
+          Math.abs(direction.current.x) > 0 ||
+          Math.abs(direction.current.z) > 0
+        ) {
+          console.log(
+            "Character position:",
+            meshRef.current.position.toArray()
+          );
+        }
+
         // Rotate character to face movement direction
         const angle = Math.atan2(direction.current.x, direction.current.z);
         meshRef.current.rotation.y = angle;
@@ -288,8 +299,8 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       {/* Glow effect for 'it' player */}
       {isIt && (
         <mesh>
-          <boxGeometry args={[0.7, 1.2, 0.7]} />
-          <meshBasicMaterial color="#ff6666" transparent opacity={0.2} />
+          <boxGeometry args={[0.6, 1.1, 0.6]} />
+          <meshBasicMaterial color="#ff6666" transparent opacity={0.15} />
         </mesh>
       )}
     </group>
@@ -566,7 +577,10 @@ const Solo: React.FC = () => {
     });
 
     socketClient.on("chat-message", (message: ChatMessage) => {
-      setChatMessages((prev) => [...prev.slice(-(MAX_CHAT_MESSAGES - 1)), message]); // Keep last 50 messages
+      setChatMessages((prev) => [
+        ...prev.slice(-(MAX_CHAT_MESSAGES - 1)),
+        message,
+      ]); // Keep last 50 messages
     });
 
     // Game-related socket events
@@ -610,7 +624,10 @@ const Solo: React.FC = () => {
     };
 
     // Add to local messages immediately for responsive UI
-    setChatMessages((prev) => [...prev.slice(-(MAX_CHAT_MESSAGES - 1)), chatMessage]);
+    setChatMessages((prev) => [
+      ...prev.slice(-(MAX_CHAT_MESSAGES - 1)),
+      chatMessage,
+    ]);
 
     // Emit to server
     socketClient.emit("chat-message", chatMessage);
@@ -697,13 +714,14 @@ const Solo: React.FC = () => {
           left: "50%",
           transform: "translateX(-50%)",
           padding: "6px 12px",
-          backgroundColor: "rgba(128, 128, 128, 0.5)",
-          color: "rgba(255, 255, 255, 0.7)",
+          backgroundColor: "rgba(0, 0, 0, 0.3)",
+          color: "rgba(255, 255, 255, 0.5)",
           borderRadius: "4px",
           zIndex: 1000,
           pointerEvents: "none", // Click-through
           fontSize: "12px",
           fontFamily: "monospace",
+          opacity: 0.5,
         }}
       >
         Solo Mode - Offline

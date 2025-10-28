@@ -10,7 +10,7 @@
 
 ### Camera & Controls
 
-- Camera is locked, but should match rotation
+- Camera is locked, but character should match rotation when left click vs. right click allows sky cam
 - Clicking the mouse seems to interrupt movement, should not. Should allow freecam movement while moving (so can rotate around the player while moving forward/backwards)
   - Maybe use left click for rotation and right click for skycam/freecam? Given we may need to use left click for inputs.
 
@@ -21,3 +21,13 @@
   - Make it non-interactable (can't be highlighted or clicked - click through)
   - Half opacity
   - Show "offline" when in solo mode
+
+Game Modes
+Players: 0
+Need at least 2 players to start a game - not true in solo mode.
+
+
+Chat - typing H brings up help, when chat is focused ignore that and some ofthe other inputs but keep esc so we can toggle in out without the mouse. 
+
+
+- the character block is too big and no longer moves. but the inputs are registering on the window view.
