@@ -59,7 +59,7 @@ The app will be available at `http://localhost:4444`.
 
 ## 📁 Project Structure
 
-```
+```bash
 multi/
 ├── .github/              # GitHub Actions CI/CD workflows
 ├── .husky/               # Git hooks for pre-commit validation
