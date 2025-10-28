@@ -1,10 +1,12 @@
-
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Text, Stats, OrbitControls } from '@react-three/drei';
 import { io, Socket } from 'socket.io-client';
 import '../styles/App.css';
+
+const RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY = 1000; // Start with 1 second
 
 
 
