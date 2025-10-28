@@ -16,7 +16,21 @@ export default [
         ecmaVersion: 'latest',
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
-  project: './config/tsconfig.json',
+        project: './tsconfig.json',
+      },
+      globals: {
+        // Vitest globals for test files
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        vi: 'readonly',
+        test: 'readonly',
+        window: 'readonly',
+        document: 'readonly',
       },
     },
     plugins: {
