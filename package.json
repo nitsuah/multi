@@ -8,6 +8,7 @@
         "format:check": "prettier --check \"src/*.{js,jsx,json,md,ts,tsx,css}\"",
         "typecheck": "tsc --noEmit",
         "lint": "eslint src --ext .js,.jsx,.ts,.tsx --max-warnings=0 --config ./config/eslint.config.js --fix --no-error-on-unmatched-pattern --resolve-plugins-relative-to . --project ./tsconfig.json",
+        "test": "vitest --config ./config/vitest.config.ts",
         "prepare": "husky install"
     },
     "dependencies": {
