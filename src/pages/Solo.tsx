@@ -7,6 +7,7 @@ import * as THREE from "three";
 import type { Clients } from "../types/socket";
 import PerformanceMonitor from "../components/PerformanceMonitor";
 import QualitySettings, { QualityLevel } from "../components/QualitySettings";
+import ThemeToggle from "../components/ThemeToggle";
 import { KeyDisplay, W, A, S, D, SHIFT } from "../components/utils";
 import "../styles/App.css";
 
@@ -304,6 +305,7 @@ const Solo: React.FC = () => {
 
   return (
     <>
+      <ThemeToggle />
       <PerformanceMonitor onPerformanceChange={setCurrentFPS} />
       <QualitySettings onChange={setQuality} currentFPS={currentFPS} />
       {!isConnected && (
