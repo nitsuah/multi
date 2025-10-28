@@ -2,6 +2,7 @@ import * as React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import Solo from '../pages/Solo';
 import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
@@ -136,13 +137,20 @@ describe('Solo Component', () => {
     // Mock import.meta.env for Vite
     vi.stubEnv('VITE_SOCKET_SERVER_URL', 'http://custom-server.com');
     
-    render(<Solo />);
+    render(
+      <BrowserRouter future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}>
+        <Solo />
+      </BrowserRouter>
+    );
     
     expect(io).toHaveBeenCalledWith('http://custom-server.com', {
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: RECONNECT_DELAY,
+      reconnectionDelay: 1000,
     });
     
     vi.unstubAllEnvs();
@@ -152,7 +160,14 @@ describe('Solo Component', () => {
     // Ensure no env variable is set
     vi.unstubAllEnvs();
     
-    render(<Solo />);
+    render(
+      <BrowserRouter future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}>
+        <Solo />
+      </BrowserRouter>
+    );
     
     expect(io).toHaveBeenCalledWith(window.location.origin, {
       transports: ['websocket'],
@@ -160,7 +175,5 @@ describe('Solo Component', () => {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
-    
-    process.env = originalEnv;
   });
 });

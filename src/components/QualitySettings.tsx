@@ -9,7 +9,7 @@ interface QualitySettingsProps {
 
 const QualitySettings: React.FC<QualitySettingsProps> = ({ onChange, currentFPS }) => {
   const [quality, setQuality] = useState<QualityLevel>(() => {
-    const saved = localStorage.getItem('graphics-quality');
+    const saved = typeof window !== 'undefined' ? window.localStorage.getItem('graphics-quality') : null;
     return (saved as QualityLevel) || 'auto';
   });
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -31,7 +31,9 @@ const QualitySettings: React.FC<QualitySettingsProps> = ({ onChange, currentFPS 
 
   const handleQualityChange = (newQuality: QualityLevel) => {
     setQuality(newQuality);
-    localStorage.setItem('graphics-quality', newQuality);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('graphics-quality', newQuality);
+    }
     onChange(newQuality);
     setIsOpen(false);
   };

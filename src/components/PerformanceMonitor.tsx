@@ -8,12 +8,15 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({ onPerformanceCh
   const [fps, setFps] = useState<number>(60);
   const [show, setShow] = useState<boolean>(true);
   const frameTimesRef = useRef<number[]>([]);
-  const lastFrameTimeRef = useRef<number>(performance.now());
-  const rafIdRef = useRef<number>();
+  const lastFrameTimeRef = useRef<number>(0);
+  const rafIdRef = useRef<number>(0);
 
   useEffect(() => {
-    const measureFPS = () => {
-      const now = performance.now();
+    // Initialize lastFrameTimeRef inside useEffect
+    lastFrameTimeRef.current = window.performance.now();
+    
+    const measureFrame = () => {
+      const now = window.performance.now();
       const delta = now - lastFrameTimeRef.current;
       lastFrameTimeRef.current = now;
 
@@ -34,14 +37,14 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({ onPerformanceCh
         }
       }
 
-      rafIdRef.current = requestAnimationFrame(measureFPS);
+      rafIdRef.current = window.requestAnimationFrame(measureFrame);
     };
 
-    rafIdRef.current = requestAnimationFrame(measureFPS);
+    rafIdRef.current = window.requestAnimationFrame(measureFrame);
 
     return () => {
       if (rafIdRef.current) {
-        cancelAnimationFrame(rafIdRef.current);
+        window.cancelAnimationFrame(rafIdRef.current);
       }
     };
   }, [onPerformanceChange]);
@@ -56,6 +59,14 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({ onPerformanceCh
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={() => setShow(false)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          setShow(false);
+        }
+      }}
       style={{
         position: 'fixed',
         top: '10px',
@@ -70,7 +81,6 @@ const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({ onPerformanceCh
         userSelect: 'none',
         cursor: 'pointer',
       }}
-      onClick={() => setShow(false)}
       title="Click to hide"
     >
       FPS: {fps}

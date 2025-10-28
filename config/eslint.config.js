@@ -10,13 +10,15 @@ export default [
   js.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],
+    ignores: ['**/coverage/**', '**/dist/**', '**/node_modules/**'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
         ecmaFeatures: { jsx: true },
-        project: './tsconfig.json',
+        // Removed project: './tsconfig.json' for faster linting
+        // Use `npm run typecheck` for type checking
       },
       globals: {
         describe: 'readonly',
@@ -35,6 +37,11 @@ export default [
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         NodeJS: 'readonly',
+        HTMLDivElement: 'readonly',
+        EventTarget: 'readonly',
+        HTMLElement: 'readonly',
+        Element: 'readonly',
+        Node: 'readonly',
       },
     },
     plugins: {
