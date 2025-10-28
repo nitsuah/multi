@@ -4,8 +4,11 @@
         "build": "vite build",
         "dev": "node develop.js",
         "start": "node server.js",
-        "format": "prettier --write \"src/*.{js,jsx,json,md,ts,tsx,css}\"",
-        "lint": "eslint src --ext .js,.jsx,.ts,.tsx --max-warnings=0 --config ./config/eslint.config.js --parser-options project=./config/tsconfig.json"
+    "format": "prettier --write \"src/*.{js,jsx,json,md,ts,tsx,css}\"",
+    "format:check": "prettier --check \"src/*.{js,jsx,json,md,ts,tsx,css}\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx --max-warnings=0 --config ./config/eslint.config.js --fix --no-error-on-unmatched-pattern --resolve-plugins-relative-to . --project ./tsconfig.json",
+        "prepare": "husky install"
     },
     "dependencies": {
         "@splinetool/react-spline": "^2.2.6",
@@ -30,7 +33,7 @@
         "eslint-plugin-jsx-a11y": "^6.10.2",
         "eslint-plugin-react": "^7.37.5",
         "eslint-plugin-react-hooks": "^7.0.1",
-        "husky": "^9.1.7",
+        "husky": "^8.0.0",
         "jsdom": "^27.0.1",
         "lint-staged": "^16.2.6",
         "nodemon": "^2.0.15",
