@@ -7,7 +7,7 @@
         "format": "prettier --write \"src/*.{js,jsx,json,md,ts,tsx,css}\"",
         "format:check": "prettier --check \"src/*.{js,jsx,json,md,ts,tsx,css}\"",
         "typecheck": "tsc --noEmit",
-        "lint": "eslint src --config ./config/eslint.config.js --max-warnings=0",
+        "lint": "eslint src --config ./config/eslint.config.js --max-warnings=0 --cache",
         "test": "vitest --config ./config/vitest.config.ts",
         "prepare": "husky install"
     },

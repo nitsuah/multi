@@ -2,3 +2,4 @@ dist
 node_modules
 .env
 bundle-stats.html
+.eslintcache
