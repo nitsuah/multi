@@ -1,13 +1,13 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Spline from '@splinetool/react-spline';
+// import Spline from '@splinetool/react-spline';
 import Footer from '../components/Footer';
-import LoadingSpinner from '../components/LoadingSpinner';
+// import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorBoundary from '../components/ErrorBoundary';
 import "../styles/App.css";
 
-// CONSTANTS
-const SPLINE_SCENE = `https://prod.spline.design/lwFGUGO5nCfnnDQU/scene.splinecode`;
+// CONSTANTS - Spline temporarily disabled to debug React bundling issue
+// const SPLINE_SCENE = `https://prod.spline.design/lwFGUGO5nCfnnDQU/scene.splinecode`;
 
 
 const Home = () => {
@@ -51,9 +51,22 @@ const Home = () => {
           <div className="header">
             <h2>PLAY🌑DARKMOON</h2>
           </div>
-          <Suspense fallback={<LoadingSpinner />}>
+          {/* Spline temporarily disabled - causing React duplicate module issues */}
+          {/* <Suspense fallback={<LoadingSpinner />}>
             <Spline scene={SPLINE_SCENE} />
-          </Suspense>
+          </Suspense> */}
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: '120px',
+            opacity: 0.3,
+            userSelect: 'none',
+            pointerEvents: 'none'
+          }}>
+            🌑
+          </div>
           <div className="middle-row">
             {renderHome()}
           </div>
