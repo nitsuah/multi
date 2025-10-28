@@ -3,12 +3,15 @@ set -e
 
 echo "Running pre-commit hook..."
 
-# Use native Windows npm (much faster than WSL)
-if command -v npm >/dev/null 2>&1; then
+# On Windows with WSL, use wsl npm (npm not in Git Bash PATH)
+if command -v wsl >/dev/null 2>&1; then
+	echo "Using WSL npm..."
+	wsl npm exec lint-staged -- --config ./config/lint-staged.config.json
+elif command -v npm >/dev/null 2>&1; then
 	echo "Using native npm..."
 	npm exec lint-staged -- --config ./config/lint-staged.config.json
 else
-	echo "ERROR: npm not found. Please install Node.js."
+	echo "ERROR: Neither npm nor WSL found."
 	exit 1
 fi
 
