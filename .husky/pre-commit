@@ -1,12 +1,11 @@
 #!/usr/bin/env sh
 set -e
 
-echo "Running pre-commit hook (current repo only, works in Windows or WSL)..."
+echo "Running pre-commit hook..."
 if command -v npm >/dev/null 2>&1; then
-	npm run format:check --silent
-	npm run typecheck --silent
+	npx lint-staged --config ./config/lint-staged.config.json
 	exit 0
 else
-	echo "npm not found in PATH; skipping pre-commit validation. To enable hooks, install Node and run 'npm ci'."
+	echo "npm not found in PATH; skipping pre-commit validation."
 	exit 0
 fi
