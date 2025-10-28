@@ -138,7 +138,12 @@ describe('Solo Component', () => {
     
     render(<Solo />);
     
-    expect(io).toHaveBeenCalledWith('http://custom-server.com', { transports: ['websocket'] });
+    expect(io).toHaveBeenCalledWith('http://custom-server.com', {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
     
     process.env = originalEnv;
   });
@@ -150,7 +155,12 @@ describe('Solo Component', () => {
     
     render(<Solo />);
     
-    expect(io).toHaveBeenCalledWith(window.location.origin, { transports: ['websocket'] });
+    expect(io).toHaveBeenCalledWith(window.location.origin, {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
     
     process.env = originalEnv;
   });

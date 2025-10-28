@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Text, Stats, OrbitControls } from '@react-three/drei';
 import { io, Socket } from 'socket.io-client';
-import type { Clients, PlayerState } from '../types/socket';
+import type { Clients } from '../types/socket';
 import '../styles/App.css';
 
 const RECONNECT_ATTEMPTS = 5;

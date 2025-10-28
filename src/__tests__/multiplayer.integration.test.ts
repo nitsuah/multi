@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { io, Socket } from 'socket.io-client';
-import type { Server as SocketIOServer } from 'socket.io';
-import type { Clients, MoveEventData } from '../types/socket';
+import type { MoveEventData } from '../types/socket';
 
 // This is an integration test for multiplayer functionality
 // It simulates multiple clients connecting and moving in the game
@@ -12,6 +10,7 @@ interface MockSocket {
   on: (event: string, callback: (...args: unknown[]) => void) => void;
   disconnect: () => void;
   connected: boolean;
+  _moveCallback?: (data: unknown) => void;
 }
 
 describe('Multiplayer Integration', () => {
@@ -28,7 +27,7 @@ describe('Multiplayer Integration', () => {
       emit: vi.fn((event: string, data: unknown) => {
         // Simulate server broadcasting to all clients
         Object.values(mockClients).forEach(client => {
-          const callback = (client as any)._moveCallback;
+          const callback = client._moveCallback;
           if (callback && event === 'move') {
             callback(data);
           }
@@ -62,7 +61,7 @@ describe('Multiplayer Integration', () => {
       }),
       on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
         if (event === 'move') {
-          (client as any)._moveCallback = callback;
+          client._moveCallback = callback;
         }
       }),
       disconnect: vi.fn(() => {

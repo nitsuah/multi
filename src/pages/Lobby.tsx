@@ -76,12 +76,8 @@ const UserWrapper: React.FC<UserWrapperProps> = ({ position, rotation, id }) => 
     );
 };
 
-import type { Socket as SocketType } from 'socket.io-client';
-interface Clients {
-    [key: string]: { position: [number, number, number]; rotation: [number, number, number] };
-}
 const Lobby: React.FC = () => {
-    const [socketClient, setSocketClient] = useState<SocketType | null>(null);
+    const [socketClient, setSocketClient] = useState<Socket | null>(null);
     const [clients, setClients] = useState<Clients>({});
 
     useEffect(() => {

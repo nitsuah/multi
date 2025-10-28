@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Smoke tests to verify basic server functionality
 // These tests ensure the server files are syntactically correct
