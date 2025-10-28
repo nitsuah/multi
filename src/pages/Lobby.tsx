@@ -4,10 +4,10 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Text, Stats } from '@react-three/drei'
 import { MeshNormalMaterial, BoxGeometry } from 'three';
 import { io } from 'socket.io-client'
+import type { Socket } from 'socket.io-client';
+import type { Clients } from '../types/socket';
 import Footer from "../components/Footer"
 import '../styles/App.css'
-
-import type { Socket } from 'socket.io-client';
 
 interface ControlsWrapperProps {
     socket: Socket;
