@@ -1,6 +1,6 @@
 # FEEDBACK for darkmoon.dev — Remaining items (pruned)
 
-Completed items removed from this file. Below are the active tasks we still need to track and prioritize.
+Completed items removed from this file. Below are the active tasks we still need to track and prioritize for play testing.
 
 Short actionable checklist
 
