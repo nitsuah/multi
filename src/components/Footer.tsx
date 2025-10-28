@@ -1,4 +1,4 @@
-import React from "react"
+import * as React from "react"
 import TwitterLogo from "../assets/twitter-512.png"
 
 // CONSTANTS

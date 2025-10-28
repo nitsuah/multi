@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+set -e
+
+echo "Running pre-commit hook..."
+if command -v npm >/dev/null 2>&1; then
+	npx lint-staged --config ./config/lint-staged.config.json
+	exit 0
+else
+	echo "npm not found in PATH; skipping pre-commit validation."
+	exit 0
+fi

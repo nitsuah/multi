@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Text, Stats, OrbitControls } from '@react-three/drei';
-import { MeshNormalMaterial, BoxGeometry } from 'three';
 import { io, Socket } from 'socket.io-client';
 import '../styles/App.css';
 
@@ -38,7 +38,8 @@ const Solo: React.FC = () => {
     const [clients, setClients] = useState<Clients>({});
 
     useEffect(() => {
-        const socket = io();
+    const serverUrl = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_SERVER_URL) || undefined;
+    const socket = io(serverUrl || window.location.origin, { transports: ['websocket'] });
         setSocketClient(socket);
         return () => {
             socket.disconnect();

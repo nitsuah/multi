@@ -2,6 +2,7 @@ import fs from 'fs'
 import express from 'express'
 import Router from 'express-promise-router'
 import { Server } from 'socket.io'
+import cors from 'cors'
 
 // Create router
 const router = Router()
@@ -17,15 +18,27 @@ router.use('*', (req, res) => {
     res.status(404).send({ message: 'Not Found' })
 })
 
+
 // Create express app and listen on port 4444
 const app = express()
+app.use(cors({
+    origin: '*', // For production, restrict this to your Netlify domain
+    methods: ['GET', 'POST'],
+    credentials: true
+}))
 app.use(express.static('dist'))
 app.use(router)
 const server = app.listen(process.env.PORT || 4444, () => {
     console.log(`Listening on port http://localhost:4444...`)
 })
 
-const ioServer = new Server(server)
+const ioServer = new Server(server, {
+    cors: {
+        origin: '*', // For production, restrict this to your Netlify domain
+        methods: ['GET', 'POST'],
+        credentials: true
+    }
+})
 
 let clients = {}
 

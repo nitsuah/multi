@@ -48,6 +48,7 @@ export class CharacterControls {
         this.toggleRun = !this.toggleRun
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public update(delta: number, keysPressed: any) {
         const directionPressed = DIRECTIONS.some(key => keysPressed[key] == true)
 
@@ -114,6 +115,7 @@ export class CharacterControls {
         this.orbitControl.target = this.cameraTarget
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private directionOffset(keysPressed: any) {
         var directionOffset = 0 // w
 

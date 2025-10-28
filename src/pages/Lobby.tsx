@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
+import * as React from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Text, Stats } from '@react-three/drei'
 import { MeshNormalMaterial, BoxGeometry } from 'three';
@@ -6,7 +7,6 @@ import { io } from 'socket.io-client'
 import Footer from "../components/Footer"
 import '../styles/App.css'
 
-import type { MutableRefObject } from 'react';
 import type { Socket } from 'socket.io-client';
 
 interface ControlsWrapperProps {
@@ -14,11 +14,18 @@ interface ControlsWrapperProps {
 }
 
 const ControlsWrapper = ({ socket }: ControlsWrapperProps) => {
-    const controlsRef = useRef<any>(null);
+    const controlsRef = useRef(null);
 
     useEffect(() => {
-        const onControlsChange = (val: any) => {
-            const { position, rotation } = val.target.object;
+        const onControlsChange = () => {
+            if (!controlsRef.current) return;
+            const controls = controlsRef.current as unknown as { 
+                object: { 
+                    position: { toArray: (arr: number[]) => void };
+                    rotation: { toArray: (arr: number[]) => void };
+                };
+            };
+            const { position, rotation } = controls.object;
             const { id } = socket;
             const posArray: number[] = [];
             const rotArray: number[] = [];
@@ -30,13 +37,13 @@ const ControlsWrapper = ({ socket }: ControlsWrapperProps) => {
                 position: posArray,
             });
         };
-        const current = controlsRef.current as any;
-        if (current && typeof current.addEventListener === 'function') {
-            current.addEventListener('change', onControlsChange);
+        const current = controlsRef.current;
+        if (current) {
+            (current as unknown as EventTarget).addEventListener('change', onControlsChange);
         }
         return () => {
-            if (current && typeof current.removeEventListener === 'function') {
-                current.removeEventListener('change', onControlsChange);
+            if (current) {
+                (current as unknown as EventTarget).removeEventListener('change', onControlsChange);
             }
         };
     }, [socket]);
@@ -79,7 +86,8 @@ const Lobby: React.FC = () => {
 
     useEffect(() => {
         // On mount initialize the socket connection
-        const socket = io();
+    const serverUrl = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_SERVER_URL) || undefined;
+    const socket = io(serverUrl || window.location.origin, { transports: ['websocket'] });
         setSocketClient(socket);
         // Dispose gracefully
         return () => {
