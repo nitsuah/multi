@@ -4,5 +4,7 @@ node_modules
 bundle-stats.html
 .eslintcache
 .vscode
-coverage
 .DS_Store
+
+coverage/
+coverage/*
