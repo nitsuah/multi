@@ -43,7 +43,6 @@ const Solo: React.FC = () => {
     const attemptReconnect = useCallback(() => {
         if (reconnectAttempts.current < RECONNECT_ATTEMPTS) {
             const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current);
-            // eslint-disable-next-line no-console
             console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts.current + 1}/${RECONNECT_ATTEMPTS})`);
             
             reconnectTimeout.current = setTimeout(() => {
@@ -53,7 +52,6 @@ const Solo: React.FC = () => {
                 }
             }, delay);
         } else {
-            // eslint-disable-next-line no-console
             console.error('Max reconnection attempts reached');
         }
     }, [socketClient]);
@@ -68,14 +66,12 @@ const Solo: React.FC = () => {
         });
 
         socket.on('connect', () => {
-            // eslint-disable-next-line no-console
             console.log('Socket connected:', socket.id);
             setIsConnected(true);
             reconnectAttempts.current = 0;
         });
 
         socket.on('disconnect', (reason) => {
-            // eslint-disable-next-line no-console
             console.log('Socket disconnected:', reason);
             setIsConnected(false);
             
@@ -86,7 +82,6 @@ const Solo: React.FC = () => {
         });
 
         socket.on('connect_error', (error) => {
-            // eslint-disable-next-line no-console
             console.error('Socket connection error:', error);
             attemptReconnect();
         });
