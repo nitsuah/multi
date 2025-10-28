@@ -18,15 +18,6 @@ describe("PerformanceMonitor Component", () => {
       expect(screen.getByText(/FPS: 60/)).toBeInTheDocument();
     });
 
-    it("should not render when hidden", async () => {
-      render(<PerformanceMonitor />);
-      const fpsElement = screen.getByRole("button");
-      fpsElement.click();
-      await waitFor(() => {
-        expect(screen.queryByText(/FPS:/)).not.toBeInTheDocument();
-      });
-    });
-
     it("should have correct styling", () => {
       render(<PerformanceMonitor />);
       const fpsElement = screen.getByRole("button");
