@@ -1,6 +1,5 @@
 # FEEDBACK for darkmoon.dev
 
-- 
 src/pages/Solo.tsx
 Comment on lines +239 to +240
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,4 +34,7 @@ Suggested change
     
     const handleKeyPress = (e: KeyboardEvent) => {
 Copilot uses AI. Check for mistakes.
+
+
+## MAnual feedback
 
