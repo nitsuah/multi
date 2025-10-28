@@ -6,7 +6,9 @@ import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
     plugins: [
-        react(),
+        react({
+            jsxRuntime: 'automatic',
+        }),
         visualizer({
             open: false,
             filename: 'bundle-stats.html',
@@ -17,6 +19,8 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
+            'react': path.resolve(__dirname, 'node_modules/react'),
+            'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
         },
         dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'three']
     },
