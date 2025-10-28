@@ -14,9 +14,11 @@ interface ControlsWrapperProps {
 }
 
 const ControlsWrapper = ({ socket }: ControlsWrapperProps) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const controlsRef = useRef<any>(null);
 
     useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const onControlsChange = (val: any) => {
             const { position, rotation } = val.target.object;
             const { id } = socket;
