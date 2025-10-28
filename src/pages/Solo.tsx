@@ -1,9 +1,8 @@
 
 import * as React from 'react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Text, Stats, OrbitControls } from '@react-three/drei';
-import { MeshNormalMaterial, BoxGeometry } from 'three';
 import { io, Socket } from 'socket.io-client';
 import '../styles/App.css';
 

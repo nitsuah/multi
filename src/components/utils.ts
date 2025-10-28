@@ -32,7 +32,7 @@ export class KeyDisplay {
 
         this.updatePosition()
 
-        this.map.forEach( (v, _) => {
+        this.map.forEach( (v) => {
             document.body.append(v)
         })
     }

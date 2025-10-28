@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import Lobby from '../pages/Lobby';
 import { BrowserRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';

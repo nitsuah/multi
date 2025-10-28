@@ -19,7 +19,6 @@ export default [
         project: './tsconfig.json',
       },
       globals: {
-        // Vitest globals for test files
         describe: 'readonly',
         it: 'readonly',
         expect: 'readonly',
@@ -31,6 +30,7 @@ export default [
         test: 'readonly',
         window: 'readonly',
         document: 'readonly',
+        process: 'readonly',
       },
     },
     plugins: {
@@ -46,6 +46,8 @@ export default [
       ...jsxA11y.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      'react/no-unknown-property': ['error', { ignore: ['position', 'rotation', 'geometry', 'material', 'intensity', 'castShadow', 'shadow-mapSize-width', 'shadow-mapSize-height'] }],
+      'react-hooks/set-state-in-effect': 'off',
     },
     settings: {
       react: {

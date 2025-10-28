@@ -7,7 +7,6 @@ import { io } from 'socket.io-client'
 import Footer from "../components/Footer"
 import '../styles/App.css'
 
-import type { MutableRefObject } from 'react';
 import type { Socket } from 'socket.io-client';
 
 interface ControlsWrapperProps {
