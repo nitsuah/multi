@@ -82,8 +82,8 @@ const Lobby: React.FC = () => {
 
     useEffect(() => {
         // On mount initialize the socket connection
-    const serverUrl = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_SERVER_URL) || undefined;
-    const socket = io(serverUrl || window.location.origin, { transports: ['websocket'] });
+    const serverUrl = import.meta.env.VITE_SOCKET_SERVER_URL || window.location.origin;
+    const socket = io(serverUrl, { transports: ['websocket'] });
         setSocketClient(socket);
         // Dispose gracefully
         return () => {

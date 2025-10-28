@@ -56,8 +56,8 @@ const Solo: React.FC = () => {
     }, [socketClient]);
 
     const connectSocket = useCallback(() => {
-        const serverUrl = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_SERVER_URL) || undefined;
-        const socket = io(serverUrl || window.location.origin, { 
+        const serverUrl = import.meta.env.VITE_SOCKET_SERVER_URL || window.location.origin;
+        const socket = io(serverUrl, { 
             transports: ['websocket'],
             reconnection: true,
             reconnectionAttempts: RECONNECT_ATTEMPTS,

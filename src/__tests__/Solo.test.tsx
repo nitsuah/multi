@@ -133,8 +133,8 @@ describe('Solo Component', () => {
   });
 
   it('uses environment variable for socket server URL when available', () => {
-    const originalEnv = process.env;
-    process.env = { ...originalEnv, REACT_APP_SOCKET_SERVER_URL: 'http://custom-server.com' };
+    // Mock import.meta.env for Vite
+    vi.stubEnv('VITE_SOCKET_SERVER_URL', 'http://custom-server.com');
     
     render(<Solo />);
     
@@ -142,16 +142,15 @@ describe('Solo Component', () => {
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnectionDelay: RECONNECT_DELAY,
     });
     
-    process.env = originalEnv;
+    vi.unstubAllEnvs();
   });
 
   it('falls back to window.location.origin when no env variable is set', () => {
-    const originalEnv = process.env;
-    process.env = { ...originalEnv };
-    delete process.env.REACT_APP_SOCKET_SERVER_URL;
+    // Ensure no env variable is set
+    vi.unstubAllEnvs();
     
     render(<Solo />);
     
