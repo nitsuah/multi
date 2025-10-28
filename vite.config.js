@@ -1,24 +1,48 @@
-
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
-import reactRefresh from '@vitejs/plugin-react-refresh';
+import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
     plugins: [
-        reactRefresh(),
+        react({
+            jsxRuntime: 'automatic',
+        }),
         visualizer({
-            open: true,
+            open: false,
             filename: 'bundle-stats.html',
             gzipSize: true,
             brotliSize: true,
         })
     ],
-    // Ensure Vite uses the correct tsconfig for JSX/TSX support
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
+            'react': path.resolve(__dirname, 'node_modules/react'),
+            'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
         },
+        dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'three']
     },
-    // Remove invalid esbuild tsconfig option; Vite will auto-detect tsconfig
+    optimizeDeps: {
+        include: ['react', 'react-dom', 'three'],
+        exclude: []
+    },
+    build: {
+        commonjsOptions: {
+            include: [/node_modules/],
+            transformMixedEsModules: true
+        },
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+                    'three-vendor': ['three', '@react-three/fiber', '@react-three/drei']
+                }
+            }
+        }
+    }
 });

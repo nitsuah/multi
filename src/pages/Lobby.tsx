@@ -4,10 +4,10 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Text, Stats } from '@react-three/drei'
 import { MeshNormalMaterial, BoxGeometry } from 'three';
 import { io } from 'socket.io-client'
+import type { Socket } from 'socket.io-client';
+import type { Clients } from '../types/socket';
 import Footer from "../components/Footer"
 import '../styles/App.css'
-
-import type { Socket } from 'socket.io-client';
 
 interface ControlsWrapperProps {
     socket: Socket;
@@ -76,18 +76,14 @@ const UserWrapper: React.FC<UserWrapperProps> = ({ position, rotation, id }) => 
     );
 };
 
-import type { Socket as SocketType } from 'socket.io-client';
-interface Clients {
-    [key: string]: { position: [number, number, number]; rotation: [number, number, number] };
-}
 const Lobby: React.FC = () => {
-    const [socketClient, setSocketClient] = useState<SocketType | null>(null);
+    const [socketClient, setSocketClient] = useState<Socket | null>(null);
     const [clients, setClients] = useState<Clients>({});
 
     useEffect(() => {
         // On mount initialize the socket connection
-    const serverUrl = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_SOCKET_SERVER_URL) || undefined;
-    const socket = io(serverUrl || window.location.origin, { transports: ['websocket'] });
+    const serverUrl = import.meta.env.VITE_SOCKET_SERVER_URL || window.location.origin;
+    const socket = io(serverUrl, { transports: ['websocket'] });
         setSocketClient(socket);
         // Dispose gracefully
         return () => {

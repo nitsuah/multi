@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
+import { expect, describe, it } from 'vitest';
 import Lobby from '../pages/Lobby';
 import { BrowserRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
@@ -7,7 +8,7 @@ import '@testing-library/jest-dom';
 describe('Lobby Page', () => {
   it('renders without crashing', () => {
     render(
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Lobby />
       </BrowserRouter>
     );

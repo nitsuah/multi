@@ -1,67 +1,169 @@
+# DARKMOON.DEV
 
-# THREEJS.Multiplayer
+[![CI](https://github.com/Nitsuah-Labs/multi/actions/workflows/ci.yml/badge.svg)](https://github.com/Nitsuah-Labs/multi/actions)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/your-badge-id/deploy-status)](https://app.netlify.com/sites/your-site/deploys)
 
-Intended site: `https://darkmoon.dev`
+> Real-time multiplayer 3D environment built with React Three Fiber, Socket.io, and Vite
 
-React Three Fiber, Socket.io, and Vite boilerplate for a multiplayer server and client. 💻
+**Live Demo:** [darkmoon.dev](https://darkmoon.dev)
 
+## ✨ Features
 
-## Features
+- 🎮 **Multiplayer 3D Scenes** — Real-time player synchronization with React Three Fiber
+- 🔌 **WebSocket Communication** — Low-latency networking via Socket.io
+- ⚡ **Modern Tooling** — Vite for lightning-fast builds and HMR
+- 📱 **Responsive Design** — Works across desktop and mobile devices
+- 🧪 **Full Test Suite** — Vitest + Testing Library with coverage reporting
+- 🚀 **CI/CD Pipeline** — GitHub Actions with automated linting and testing
+- 🎨 **Code Quality** — ESLint, Prettier, TypeScript strict mode, pre-commit hooks
 
-- Multiplayer 3D scenes with React Three Fiber
-- Real-time communication using Socket.io
-- Modern build tooling with Vite
-- Responsive and accessible UI
+## 🚀 Quick Start
 
-## Getting Started
+### Docs
 
+Check for `.md` files in docs/ directory for detailed documentation on architecture, components, and deployment.
 
+### Prerequisites
 
-1. **Fork the repository**
-	- [`https://github.com/juniorxsound/R3F.Multiplayer`](https://github.com/juniorxsound/R3F.Multiplayer)
-2. **Clone to local**
-	- `git clone git@github.com:Nitsuah-Labs/multi.git`
-3. **Install dependencies**
-	- `npm install`
-4. **Start the development server**
-	- `npm run dev`
+- Node.js 18+ and npm
+- Git
 
-The app will be available at `http://localhost:3000` by default.
+### Installation
 
-## Scripts
+```bash
+# Clone the repository
+git clone git@github.com:Nitsuah-Labs/multi.git
+cd multi
 
-- `npm run dev` — Start development server (with nodemon)
-- `npm run build` — Build for production
-- `npm run start` — Start production server
-- `npm run format` — Format code with Prettier
+# Install dependencies
+npm install
 
-## Project Structure
-
-```text
-*** End Patch
-multi/
-├── develop.js
-├── index.html
-├── package.json
-├── README.md
-├── server.js
-├── vite.config.js
-├── src/
-│   ├── index.tsx
-│   ├── assets/
-│   ├── components/
-│   ├── pages/
-│   ├── styles/
+# Start development server
+npm run dev
 ```
 
-- **src/pages/** — Main app pages (App, Home, Lobby, Solo)
-- **src/components/** — Reusable UI and logic components
-- **src/styles/** — CSS files
+The app will be available at `http://localhost:4444`.
 
-## Contribution
+## 📜 Available Scripts
 
-Contributions are welcome! Please open issues or submit pull requests for improvements and bug fixes.
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server with hot reload |
+| `npm run build` | Build for production |
+| `npm start` | Start production server |
+| `npm run lint` | Lint code with ESLint (auto-fix enabled) |
+| `npm run format` | Format code with Prettier |
+| `npm run format:check` | Check code formatting |
+| `npm run typecheck` | Run TypeScript type checking |
+| `npm test` | Run test suite with Vitest |
 
-## License
+## 📁 Project Structure
 
-MIT
+```bash
+multi/
+├── .github/              # GitHub Actions CI/CD workflows
+├── .husky/               # Git hooks for pre-commit validation
+├── config/               # Configuration files (ESLint, Prettier, Vitest)
+├── src/
+│   ├── __tests__/        # Test files
+│   ├── assets/           # Static assets
+│   ├── components/       # Reusable React components
+│   │   ├── characterControls.ts
+│   │   ├── Footer.jsx
+│   │   └── utils.ts
+│   ├── pages/            # Main application pages
+│   │   ├── App.tsx       # Root component with routing
+│   │   ├── Home.tsx      # Landing page
+│   │   ├── Lobby.tsx     # Multiplayer lobby with 3D scene
+│   │   └── Solo.tsx      # Single-player mode
+│   ├── styles/           # CSS stylesheets
+│   └── index.tsx         # Application entry point
+├── develop.js            # Development server with Vite
+├── server.js             # Production server with Socket.io
+├── netlify.toml          # Netlify deployment configuration
+├── tsconfig.json         # TypeScript configuration
+└── vite.config.js        # Vite build configuration
+```
+
+## 🧪 Testing
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+Generate coverage report:
+
+```bash
+npm test -- --coverage
+```
+
+## 🚢 Deployment
+
+### Netlify
+
+This project is configured for Netlify deployment:
+
+1. Connect your GitHub repository to Netlify
+2. Build command: `npm run build`
+3. Publish directory: `dist`
+
+The `netlify.toml` file includes SPA routing configuration.
+
+### Manual Deployment
+
+```bash
+# Build the project
+npm run build
+
+# Start production server
+npm start
+```
+
+## 🛠️ Development
+
+### Pre-commit Hooks
+
+This project uses Husky and lint-staged to enforce code quality:
+
+- Prettier formatting
+- ESLint checks
+- TypeScript type checking
+
+Hooks run automatically on commit. To bypass (not recommended):
+
+```bash
+git commit --no-verify
+```
+
+### Code Style
+
+- **TypeScript**: Strict mode enabled
+- **React**: Functional components with hooks
+- **Formatting**: Prettier with 4-space indentation
+- **Linting**: ESLint with React, TypeScript, and a11y rules
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please ensure:
+
+- All tests pass (`npm test`)
+- Code is linted (`npm run lint`)
+- Types are valid (`npm run typecheck`)
+
+## 📝 License
+
+MIT © 2025 Nitsuah Labs
+
+---
+
+**Original boilerplate:** [R3F.Multiplayer](https://github.com/juniorxsound/R3F.Multiplayer) by [@juniorxsound](https://github.com/juniorxsound)

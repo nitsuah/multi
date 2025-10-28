@@ -4,13 +4,32 @@ import Router from 'express-promise-router'
 import { Server } from 'socket.io'
 import cors from 'cors'
 
+// Environment configuration
+const PORT = process.env.PORT || 4444
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000', 'http://localhost:4444', 'https://deploy-preview-*--darkmoon-dev.netlify.app', 'https://darkmoon-dev.netlify.app']
+
 // Create router
 const router = Router()
 
-// Main route serves the index HTML
+// Health check endpoint
+router.get('/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        connections: ioServer ? ioServer.engine.clientsCount : 0
+    })
+})
+
+// Main route for production - simple status page
 router.get('/', async (req, res, next) => {
-    let html = fs.readFileSync('index.html', 'utf-8')
-    res.send(html)
+    res.json({ 
+        service: 'Multi WebSocket Server',
+        status: 'running',
+        connections: ioServer ? ioServer.engine.clientsCount : 0,
+        timestamp: new Date().toISOString()
+    })
 })
 
 // Everything else that's not index 404s
@@ -19,22 +38,59 @@ router.use('*', (req, res) => {
 })
 
 
-// Create express app and listen on port 4444
+// Create express app and listen on specified port
 const app = express()
 app.use(cors({
-    origin: '*', // For production, restrict this to your Netlify domain
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true)
+        
+        // Check if origin is allowed
+        const isAllowed = ALLOWED_ORIGINS.some(allowedOrigin => {
+            if (allowedOrigin.includes('*')) {
+                const pattern = new RegExp('^' + allowedOrigin.replace(/\*/g, '.*') + '$')
+                return pattern.test(origin)
+            }
+            return allowedOrigin === origin
+        })
+        
+        if (isAllowed) {
+            callback(null, true)
+        } else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    },
     methods: ['GET', 'POST'],
     credentials: true
 }))
 app.use(express.static('dist'))
 app.use(router)
-const server = app.listen(process.env.PORT || 4444, () => {
-    console.log(`Listening on port http://localhost:4444...`)
+
+const server = app.listen(PORT, () => {
+    console.log(`Server listening on http://localhost:${PORT}...`)
+    console.log(`Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`)
 })
 
 const ioServer = new Server(server, {
     cors: {
-        origin: '*', // For production, restrict this to your Netlify domain
+        origin: (origin, callback) => {
+            // Allow requests with no origin
+            if (!origin) return callback(null, true)
+            
+            const isAllowed = ALLOWED_ORIGINS.some(allowedOrigin => {
+                if (allowedOrigin.includes('*')) {
+                    const pattern = new RegExp('^' + allowedOrigin.replace(/\*/g, '.*') + '$')
+                    return pattern.test(origin)
+                }
+                return allowedOrigin === origin
+            })
+            
+            if (isAllowed) {
+                callback(null, true)
+            } else {
+                callback(new Error('Not allowed by CORS'))
+            }
+        },
         methods: ['GET', 'POST'],
         credentials: true
     }
