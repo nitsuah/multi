@@ -3,19 +3,13 @@ set -e
 
 echo "Running pre-commit hook..."
 
-# Try Windows npm first, fall back to WSL
+# Use native Windows npm (much faster than WSL)
 if command -v npm >/dev/null 2>&1; then
-	NPM_CMD="npm"
-elif command -v wsl >/dev/null 2>&1; then
-	echo "Using WSL npm (slower)..."
-	NPM_CMD="wsl npm"
+	echo "Using native npm..."
+	npm exec lint-staged -- --config ./config/lint-staged.config.json
 else
-	echo "ERROR: Neither Windows npm nor WSL found. Cannot run pre-commit validation."
-	echo "Please install Node.js or WSL."
+	echo "ERROR: npm not found. Please install Node.js."
 	exit 1
 fi
-
-echo "Running lint-staged..."
-$NPM_CMD exec lint-staged -- --config ./config/lint-staged.config.json
 
 echo "Pre-commit checks passed!"
