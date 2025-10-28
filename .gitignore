@@ -11,3 +11,5 @@ coverage/*
 bundle-stats.html
 lighthouse-report.html
 lighthouse-report.json
+
+TODO.md

@@ -20,7 +20,7 @@
 - **Connection status**: Should stay up top middle but:
   - Make it non-interactable (can't be highlighted or clicked - click through)
   - Half opacity
-  - Show "offline" when in solo mode
+  - Show "offline" when in solo mode vs disconnected if not connected on multiplayer
 
 Game Modes
 Players: 0

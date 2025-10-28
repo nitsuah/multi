@@ -30,7 +30,7 @@ export class KeyDisplay {
       v.style.textShadow = "1px 1px 2px rgba(0,0,0,0.5)";
       v.style.userSelect = "none";
       v.style.pointerEvents = "none";
-      v.textContent = k;
+      v.textContent = k.toUpperCase();
     });
 
     this.updatePosition();
