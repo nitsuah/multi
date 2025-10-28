@@ -4,6 +4,8 @@ import { Canvas } from '@react-three/fiber';
 import { Text, Stats, OrbitControls } from '@react-three/drei';
 import { io, Socket } from 'socket.io-client';
 import type { Clients } from '../types/socket';
+import PerformanceMonitor from '../components/PerformanceMonitor';
+import QualitySettings, { QualityLevel } from '../components/QualitySettings';
 import '../styles/App.css';
 
 const RECONNECT_ATTEMPTS = 5;
@@ -36,8 +38,42 @@ const Solo: React.FC = () => {
     const [socketClient, setSocketClient] = useState<Socket | null>(null);
     const [clients, setClients] = useState<Clients>({});
     const [isConnected, setIsConnected] = useState(false);
+    const [currentFPS, setCurrentFPS] = useState<number>(60);
+    const [quality, setQuality] = useState<QualityLevel>('auto');
     const reconnectAttempts = useRef(0);
     const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // Quality presets
+    const getQualitySettings = (level: QualityLevel) => {
+        switch (level) {
+            case 'low':
+                return {
+                    shadows: false,
+                    pixelRatio: 1,
+                    antialias: false,
+                };
+            case 'medium':
+                return {
+                    shadows: true,
+                    pixelRatio: Math.min(window.devicePixelRatio, 1.5),
+                    antialias: true,
+                };
+            case 'high':
+                return {
+                    shadows: true,
+                    pixelRatio: window.devicePixelRatio,
+                    antialias: true,
+                };
+            default: // auto
+                return {
+                    shadows: currentFPS >= 50,
+                    pixelRatio: currentFPS >= 50 ? window.devicePixelRatio : 1,
+                    antialias: currentFPS >= 40,
+                };
+        }
+    };
+
+    const qualitySettings = getQualitySettings(quality);
 
     const attemptReconnect = useCallback(() => {
         if (reconnectAttempts.current < RECONNECT_ATTEMPTS) {
@@ -111,6 +147,8 @@ const Solo: React.FC = () => {
 
     return (
         <>
+            <PerformanceMonitor onPerformanceChange={setCurrentFPS} />
+            <QualitySettings onChange={setQuality} currentFPS={currentFPS} />
             {!isConnected && (
                 <div style={{
                     position: 'fixed',
@@ -125,16 +163,21 @@ const Solo: React.FC = () => {
                     Disconnected - Reconnecting...
                 </div>
             )}
-            <Canvas camera={{ position: [0, 1, -5], near: 0.1, far: 1000 }} shadows>
+            <Canvas 
+                camera={{ position: [0, 1, -5], near: 0.1, far: 1000 }} 
+                shadows={qualitySettings.shadows}
+                dpr={qualitySettings.pixelRatio}
+                gl={{ antialias: qualitySettings.antialias }}
+            >
                 <Stats />
                 <OrbitControls enableDamping minDistance={5} maxDistance={15} enablePan={false} maxPolarAngle={Math.PI / 2 - 0.05} />
                 <ambientLight intensity={0.7} />
                 <directionalLight
                     position={[-60, 100, -10]}
                     intensity={1}
-                    castShadow
-                    shadow-mapSize-width={4096}
-                    shadow-mapSize-height={4096}
+                    castShadow={qualitySettings.shadows}
+                    shadow-mapSize-width={qualitySettings.shadows ? 4096 : 512}
+                    shadow-mapSize-height={qualitySettings.shadows ? 4096 : 512}
                 />
                 <gridHelper rotation={[0, 0, 0]} />
                 {Object.keys(clients)
