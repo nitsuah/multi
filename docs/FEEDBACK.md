@@ -1,33 +1,30 @@
-# FEEDBACK for darkmoon.dev - Remaining Items
+# FEEDBACK for darkmoon.dev — Remaining items (pruned)
 
-## Completed ✅
+Completed items removed from this file. Below are the active tasks we still need to track and prioritize.
 
-- TypeScript typing: Fixed all `any` types to use `KeyboardEvent`
-- FPS counter removal: Removed Stats component from top right
-- Input indicators: Made text bigger (16px) and closer grouped
+Short actionable checklist
 
-## Still TODO ❌
+- Camera & controls
+  - Make left-drag rotate camera around the player and update the character's facing direction.
+  - Make right-drag enter a sky/free camera without interrupting movement inputs.
+  - Ensure mouse dragging does not cancel movement while keys are held.
 
-### Camera & Controls
+- UI
+  - Keep theme toggle in bottom-left and avoid overlapping chat UI.
+  - Connection status: always top-center, non-interactable, half opacity, show "Solo — Offline" when not connected.
 
-- Camera is locked, but character should match rotation when left click vs. right click allows sky cam
-- Clicking the mouse seems to interrupt movement, should not. Should allow freecam movement while moving (so can rotate around the player while moving forward/backwards)
-  - Maybe use left click for rotation and right click for skycam/freecam? Given we may need to use left click for inputs.
+- Game behavior
+  - Show "Start Tag (Solo Practice)" when players.size === 0 and ensure GameManager accepts solo practice mode.
+  - Verify character size and glow are visually appropriate; reduce overlay if needed.
 
-### UI Positioning & Behavior
+- Tests & CI
+  - KeyDisplay labels should be uppercase (W/A/S/D/SHIFT) to satisfy tests.
+  - Remove debug-only console.log or guard with import.meta.env.DEV.
 
-- **Dark mode toggle**: Move to the lower left section, near settings. It's jarring to have it up top left.
-- **Connection status**: Should stay up top middle but:
-  - Make it non-interactable (can't be highlighted or clicked - click through)
-  - Half opacity
-  - Show "offline" when in solo mode vs disconnected if not connected on multiplayer
+If you'd like, I can now:
 
-Game Modes
-Players: 0
-Need at least 2 players to start a game - not true in solo mode.
+1. Remove the leftover PRR/TODO files (done).
+2. Open small PRs for each remaining task and implement them in priority order (camera controls → UI → game behavior → tests).
+3. Run or help run the test suite locally (you need Node.js available in your environment).
 
-
-Chat - typing H brings up help, when chat is focused ignore that and some ofthe other inputs but keep esc so we can toggle in out without the mouse. 
-
-
-- the character block is too big and no longer moves. but the inputs are registering on the window view.
+Tell me which item you'd like me to pick next (I recommend fixing character rotation/camera behavior first).
