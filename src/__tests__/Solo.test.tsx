@@ -1,7 +1,9 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from 'react';
 import Solo from '../pages/Solo';
+import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
 
 // Mock socket.io-client
@@ -21,18 +23,27 @@ vi.mock('@react-three/drei', () => ({
   OrbitControls: () => <div data-testid="orbit-controls" />,
 }));
 
+interface MockSocket extends Partial<Socket> {
+  on: ReturnType<typeof vi.fn>;
+  off: ReturnType<typeof vi.fn>;
+  disconnect: ReturnType<typeof vi.fn>;
+  connect: ReturnType<typeof vi.fn>;
+  id: string;
+}
+
 describe('Solo Component', () => {
-  let mockSocket: any;
+  let mockSocket: MockSocket;
 
   beforeEach(() => {
     mockSocket = {
       on: vi.fn(),
       off: vi.fn(),
       disconnect: vi.fn(),
+      connect: vi.fn(),
       id: 'test-socket-id',
     };
     
-    (io as any).mockReturnValue(mockSocket);
+    (io as ReturnType<typeof vi.fn>).mockReturnValue(mockSocket);
   });
 
   afterEach(() => {
@@ -74,9 +85,10 @@ describe('Solo Component', () => {
     render(<Solo />);
     
     // Get the move event handler
-    const moveHandler = mockSocket.on.mock.calls.find(
-      (call: any[]) => call[0] === 'move'
-    )?.[1];
+    const moveCall = mockSocket.on.mock.calls.find(
+      (call: unknown[]) => call[0] === 'move'
+    );
+    const moveHandler = moveCall ? moveCall[1] as (clients: Record<string, { position: [number, number, number]; rotation: [number, number, number] }>) => void : undefined;
     
     expect(moveHandler).toBeDefined();
     
@@ -87,7 +99,7 @@ describe('Solo Component', () => {
     };
     
     act(() => {
-      moveHandler(mockClients);
+      if (moveHandler) moveHandler(mockClients);
     });
     
     expect(screen.getByTestId('canvas')).toBeDefined();
@@ -96,9 +108,10 @@ describe('Solo Component', () => {
   it('filters out own socket ID from rendering', async () => {
     render(<Solo />);
     
-    const moveHandler = mockSocket.on.mock.calls.find(
-      (call: any[]) => call[0] === 'move'
-    )?.[1];
+    const moveCall = mockSocket.on.mock.calls.find(
+      (call: unknown[]) => call[0] === 'move'
+    );
+    const moveHandler = moveCall ? moveCall[1] as (clients: Record<string, { position: [number, number, number]; rotation: [number, number, number] }>) => void : undefined;
     
     // Include own socket ID in clients
     const mockClients = {
@@ -107,7 +120,7 @@ describe('Solo Component', () => {
     };
     
     act(() => {
-      moveHandler(mockClients);
+      if (moveHandler) moveHandler(mockClients);
     });
     
     expect(screen.getByTestId('canvas')).toBeDefined();

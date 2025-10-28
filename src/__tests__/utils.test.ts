@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { W, A, S, D, SHIFT, DIRECTIONS, KeyDisplay } from '../components/utils';
 
 describe('Key constants', () => {

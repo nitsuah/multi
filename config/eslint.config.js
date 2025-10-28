@@ -31,6 +31,10 @@ export default [
         window: 'readonly',
         document: 'readonly',
         process: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        NodeJS: 'readonly',
       },
     },
     plugins: {
