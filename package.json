@@ -51,5 +51,8 @@
         "three": "^0.180.0",
         "vite-plugin-bundle-analyzer": "^0.0.1",
         "vitest": "^4.0.4"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-win32-x64-msvc": "^4.52.5"
     }
 }

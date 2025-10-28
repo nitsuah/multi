@@ -1,8 +1,13 @@
 dist
 node_modules
 .env
-bundle-stats.html
+
 .eslintcache
 .vscode
-coverage
 .DS_Store
+
+coverage/
+coverage/*
+bundle-stats.html
+lighthouse-report.html
+lighthouse-report.json

@@ -3,19 +3,16 @@ set -e
 
 echo "Running pre-commit hook..."
 
-# Try Windows npm first, fall back to WSL
-if command -v npm >/dev/null 2>&1; then
-	NPM_CMD="npm"
-elif command -v wsl >/dev/null 2>&1; then
-	echo "Using WSL npm (slower)..."
-	NPM_CMD="wsl npm"
-else
-	echo "ERROR: Neither Windows npm nor WSL found. Cannot run pre-commit validation."
-	echo "Please install Node.js or WSL."
-	exit 1
-fi
+# Add nodejs to PATH for Git Bash
+export PATH="$PATH:/c/Program Files/nodejs"
 
-echo "Running lint-staged..."
-$NPM_CMD exec lint-staged -- --config ./config/lint-staged.config.json
+# Now npm and node should both work
+if command -v npm >/dev/null 2>&1; then
+echo "Using Windows npm (nodejs added to PATH)..."
+npm exec lint-staged -- --config ./config/lint-staged.config.json
+else
+echo "ERROR: npm still not found after adding nodejs to PATH"
+exit 1
+fi
 
 echo "Pre-commit checks passed!"
