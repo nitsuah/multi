@@ -3,3 +3,6 @@ node_modules
 .env
 bundle-stats.html
 .eslintcache
+.vscode
+coverage
+.DS_Store
