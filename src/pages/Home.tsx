@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Spline from '@splinetool/react-spline';
 import Footer from '../components/Footer';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorBoundary from '../components/ErrorBoundary';
 import "../styles/App.css";
 
 // CONSTANTS
@@ -43,20 +45,24 @@ const Home = () => {
   );
 
   return (
-    <div className="App">
-      <div className="container">
-        <div className="header">
-          <h2>PLAY🌑DARKMOON</h2>
-        </div>
-        <Spline scene={SPLINE_SCENE} />
-        <div className="middle-row">
-          {renderHome()}
-        </div>
-        <div className="footer-container">
-          <Footer />
+    <ErrorBoundary>
+      <div className="App">
+        <div className="container">
+          <div className="header">
+            <h2>PLAY🌑DARKMOON</h2>
+          </div>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Spline scene={SPLINE_SCENE} />
+          </Suspense>
+          <div className="middle-row">
+            {renderHome()}
+          </div>
+          <div className="footer-container">
+            <Footer />
+          </div>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 };
 
