@@ -38,28 +38,30 @@ export class KeyDisplay {
     }
 
     public updatePosition() {
-        this.map.get(W).style.top = `${window.innerHeight - 150}px`
-        this.map.get(A).style.top = `${window.innerHeight - 100}px`
-        this.map.get(S).style.top = `${window.innerHeight - 100}px`
-        this.map.get(D).style.top = `${window.innerHeight - 100}px`
-        this.map.get(SHIFT).style.top = `${window.innerHeight - 100}px`
+        this.map.get(W)!.style.top = `${window.innerHeight - 150}px`;
+        this.map.get(A)!.style.top = `${window.innerHeight - 100}px`;
+        this.map.get(S)!.style.top = `${window.innerHeight - 100}px`;
+        this.map.get(D)!.style.top = `${window.innerHeight - 100}px`;
+        this.map.get(SHIFT)!.style.top = `${window.innerHeight - 100}px`;
 
-        this.map.get(W).style.left = `${300}px`
-        this.map.get(A).style.left = `${200}px`
-        this.map.get(S).style.left = `${300}px`
-        this.map.get(D).style.left = `${400}px`
-        this.map.get(SHIFT).style.left = `${50}px`
+        this.map.get(W)!.style.left = `${300}px`;
+        this.map.get(A)!.style.left = `${200}px`;
+        this.map.get(S)!.style.left = `${300}px`;
+        this.map.get(D)!.style.left = `${400}px`;
+        this.map.get(SHIFT)!.style.left = `${50}px`;
     }
 
     public down (key: string) {
-        if (this.map.get(key.toLowerCase())) {
-            this.map.get(key.toLowerCase()).style.color = 'red'
+        const element = this.map.get(key.toLowerCase());
+        if (element) {
+            element.style.color = 'red';
         }
     }
 
     public up (key: string) {
-        if (this.map.get(key.toLowerCase())) {
-            this.map.get(key.toLowerCase()).style.color = 'purple'
+        const element = this.map.get(key.toLowerCase());
+        if (element) {
+            element.style.color = 'purple';
         }
     }
 

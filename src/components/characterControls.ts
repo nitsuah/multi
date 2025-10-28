@@ -62,13 +62,15 @@ export class CharacterControls {
         }
 
         if (this.currentAction != play) {
-            const toPlay = this.animationsMap.get(play)
-            const current = this.animationsMap.get(this.currentAction)
+            const toPlay = this.animationsMap.get(play);
+            const current = this.animationsMap.get(this.currentAction);
 
-            current.fadeOut(this.fadeDuration)
-            toPlay.reset().fadeIn(this.fadeDuration).play();
+            if (current && toPlay) {
+                current.fadeOut(this.fadeDuration);
+                toPlay.reset().fadeIn(this.fadeDuration).play();
+            }
 
-            this.currentAction = play
+            this.currentAction = play;
         }
 
         this.mixer.update(delta)
