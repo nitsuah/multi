@@ -154,8 +154,12 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   useFrame((state, delta) => {
     if (!meshRef.current) return;
 
+    // WoW-style camera controls
+    const bothMouseButtons =
+      mouseControls.leftClick && mouseControls.rightClick;
+
     // Handle mouse camera rotation
-    if (mouseControls.leftClick) {
+    if (mouseControls.leftClick || mouseControls.rightClick) {
       if (isFirstMouse.current) {
         previousMouse.current.x = mouseControls.mouseX;
         previousMouse.current.y = mouseControls.mouseY;
@@ -166,9 +170,23 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       const deltaY = mouseControls.mouseY - previousMouse.current.y;
 
       const sensitivity = 0.002;
-      // Left-drag rotates camera and player facing
-      cameraRotation.current.horizontal -= deltaX * sensitivity;
-      cameraRotation.current.vertical += deltaY * sensitivity;
+
+      if (bothMouseButtons) {
+        // Both buttons: Rotate camera AND player (for movement control)
+        cameraRotation.current.horizontal -= deltaX * sensitivity;
+        cameraRotation.current.vertical += deltaY * sensitivity;
+        skycam.current = false;
+      } else if (mouseControls.rightClick) {
+        // Right-click only: Rotate camera AND player facing (WoW style)
+        cameraRotation.current.horizontal -= deltaX * sensitivity;
+        cameraRotation.current.vertical += deltaY * sensitivity;
+        skycam.current = false;
+      } else if (mouseControls.leftClick) {
+        // Left-click only: Rotate camera WITHOUT rotating player (peek mode)
+        skycam.current = true;
+        cameraRotation.current.horizontal -= deltaX * sensitivity;
+        cameraRotation.current.vertical += deltaY * sensitivity;
+      }
 
       // Clamp vertical rotation
       cameraRotation.current.vertical = Math.max(
@@ -180,31 +198,6 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       previousMouse.current.y = mouseControls.mouseY;
     } else {
       isFirstMouse.current = true;
-    }
-
-    // Skycam: right-drag moves camera without rotating player
-    if (mouseControls.rightClick) {
-      if (isFirstMouse.current) {
-        previousMouse.current.x = mouseControls.mouseX;
-        previousMouse.current.y = mouseControls.mouseY;
-        isFirstMouse.current = false;
-      }
-
-      const deltaX = mouseControls.mouseX - previousMouse.current.x;
-      const deltaY = mouseControls.mouseY - previousMouse.current.y;
-      const sensitivity = 0.003;
-
-      // enable skycam flag
-      skycam.current = true;
-
-      // adjust camera rotation for skycam
-      cameraRotation.current.horizontal -= deltaX * sensitivity;
-      cameraRotation.current.vertical += deltaY * sensitivity;
-
-      previousMouse.current.x = mouseControls.mouseX;
-      previousMouse.current.y = mouseControls.mouseY;
-    } else {
-      // when right button released, disable skycam
       skycam.current = false;
     }
 
@@ -225,7 +218,11 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
     // Calculate direction based on keys pressed and camera rotation
     direction.current.set(0, 0, 0);
 
-    if (keysPressed[W] || keysPressed[S] || keysPressed[A] || keysPressed[D]) {
+    const hasKeyboardInput =
+      keysPressed[W] || keysPressed[S] || keysPressed[A] || keysPressed[D];
+
+    // WoW-style auto-run: both mouse buttons held = move forward
+    if (bothMouseButtons || hasKeyboardInput) {
       // Movement relative to camera direction
       const forward = new THREE.Vector3();
       const right = new THREE.Vector3();
@@ -242,6 +239,12 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
         -Math.sin(cameraRotation.current.horizontal)
       );
 
+      // Both mouse buttons: auto-run forward
+      if (bothMouseButtons) {
+        direction.current.add(forward);
+      }
+
+      // Keyboard input (can combine with mouse movement)
       if (keysPressed[W]) direction.current.add(forward);
       if (keysPressed[S]) direction.current.sub(forward);
       if (keysPressed[A]) direction.current.sub(right);
