@@ -550,6 +550,29 @@ const Solo: React.FC = () => {
     };
   }, [connectSocket]);
 
+  // Initialize GameManager immediately for solo mode (even without socket)
+  useEffect(() => {
+    if (!gameManager.current) {
+      debug("Initializing GameManager for solo mode");
+      const newGameManager = new GameManager();
+      newGameManager.setCallbacks({
+        onGameStateUpdate: setGameState,
+        onPlayerUpdate: setGamePlayers,
+      });
+      gameManager.current = newGameManager;
+      setCurrentGameManager(newGameManager);
+
+      // Add local player
+      newGameManager.addPlayer({
+        id: localPlayerId,
+        name: "Solo Player",
+        position: [0, 0.5, 0],
+        rotation: [0, 0, 0],
+      });
+      setGamePlayers(new Map(newGameManager.getPlayers()));
+    }
+  }, [localPlayerId]);
+
   // Keyboard controls
   useEffect(() => {
     debug("Setting up keyboard controls");
@@ -809,12 +832,12 @@ const Solo: React.FC = () => {
         onToggle={toggleChat}
         messages={chatMessages}
         onSendMessage={handleSendMessage}
-        currentPlayerId={socketClient?.id || ""}
+        currentPlayerId={socketClient?.id || localPlayerId}
       />
       <GameUI
         gameState={gameState}
         players={gamePlayers}
-        currentPlayerId={socketClient?.id || ""}
+        currentPlayerId={socketClient?.id || localPlayerId}
         onStartGame={handleStartGame}
         onEndGame={handleEndGame}
       />
@@ -900,7 +923,7 @@ const Solo: React.FC = () => {
           mouseControls={mouseControls}
           clients={clients}
           gameManager={currentGameManager}
-          currentPlayerId={socketClient?.id || ""}
+          currentPlayerId={socketClient?.id || localPlayerId}
         />
         {Object.keys(clients)
           .filter((clientKey) => socketClient && clientKey !== socketClient.id)
