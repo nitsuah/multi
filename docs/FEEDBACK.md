@@ -5,5 +5,5 @@ Completed items removed from this file. Below are the active tasks we still need
 Short actionable checklist
 
 - [ ] Fix Node.js not found in PowerShell — see diagnostics and temp PATH fix in issue
+- [ ] Use `TODO.md` to pick next features to implement among other feedback below.
 - [ ] GAMEPLAY: 
-- [ ] Use `TODO.md` to pick next features to implement among other feedback  

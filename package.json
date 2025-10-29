@@ -8,6 +8,9 @@
         "format:check": "prettier --check \"src/*.{js,jsx,json,md,ts,tsx,css}\"",
         "typecheck": "tsc --noEmit",
         "lint": "eslint src --config ./config/eslint.config.js --max-warnings=0 --cache",
+        "lint:all": "eslint . --config ./config/eslint.config.js --max-warnings=0 --cache",
+        "lint:fix": "eslint src --config ./config/eslint.config.js --max-warnings=0 --fix",
+        "precommit": "lint-staged --config ./config/lint-staged.config.json",
         "test": "vitest --config ./config/vitest.config.ts",
         "prepare": "husky install"
     },

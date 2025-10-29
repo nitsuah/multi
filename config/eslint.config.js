@@ -9,8 +9,8 @@ import prettier from 'eslint-config-prettier';
 export default [
   js.configs.recommended,
   {
-    files: ['**/*.{ts,tsx}'],
-    ignores: ['**/coverage/**', '**/dist/**', '**/node_modules/**'],
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    ignores: ['**/coverage/**', '**/dist/**', '**/node_modules/**', '**/.husky/**', '**/build/**'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -47,6 +47,11 @@ export default [
         MouseEvent: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        exports: 'readonly',
       },
     },
     plugins: {
