@@ -24,6 +24,19 @@ class SoundManager {
 
   private initAudioContext() {
     try {
+      // Check if AudioContext is available (won't be in test environment)
+      if (
+        typeof window === "undefined" ||
+        (!window.AudioContext &&
+          !(window as Window & { webkitAudioContext?: typeof AudioContext })
+            .webkitAudioContext)
+      ) {
+        console.log(
+          "AudioContext not available, skipping audio initialization"
+        );
+        return;
+      }
+
       const WindowWithAudio = window as Window & {
         webkitAudioContext?: typeof AudioContext;
       };
