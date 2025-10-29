@@ -33,6 +33,13 @@ export class GameManager {
     onPlayerUpdate?: (players: Map<string, Player>) => void;
   };
 
+  // gated logger for GameManager (no-op unless DEV)
+  private gmDebug: (...args: unknown[]) => void = () => {};
+
+  // Scoring constants
+  private readonly MAX_TAG_SCORE = 300;
+  private readonly MILLISECONDS_PER_SECOND = 1000;
+
   constructor() {
     this.gameState = {
       mode: "none",
@@ -42,6 +49,17 @@ export class GameManager {
     };
     this.players = new Map();
     this.callbacks = {};
+
+    // initialize gmDebug if import.meta.env.DEV is available
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore - import.meta may not be available in all environments
+      if (import.meta && import.meta.env && import.meta.env.DEV) {
+        this.gmDebug = (...args: unknown[]) => console.log(...args);
+      }
+    } catch {
+      // ignore
+    }
   }
 
   setCallbacks(callbacks: {
@@ -80,8 +98,9 @@ export class GameManager {
 
   startTagGame(duration: number = 180) {
     // 3 minutes default
-    if (this.players.size < 2) {
-      console.log("Need at least 2 players to start tag game");
+    // Allow solo practice (0 players) or real games with 2+ players; block single-player
+    if (this.players.size === 1) {
+      this.gmDebug("Need at least 2 players to start tag game");
       return false;
     }
 
@@ -104,12 +123,16 @@ export class GameManager {
 
     this.callbacks.onGameStateUpdate?.(this.gameState);
     this.callbacks.onPlayerUpdate?.(this.players);
-
-    console.log(
-      `Tag game started! ${
-        this.players.get(this.gameState.itPlayerId!)?.name
-      } is IT!`
-    );
+    // Log only in dev
+    if (this.gameState.itPlayerId) {
+      this.gmDebug(
+        `Tag game started! ${
+          this.players.get(this.gameState.itPlayerId)?.name
+        } is IT!`
+      );
+    } else {
+      this.gmDebug(`Tag game started (solo practice)`);
+    }
     return true;
   }
 
@@ -135,7 +158,10 @@ export class GameManager {
     // Update time as 'it' for scoring
     const timeAsIt = now - (this.gameState.roundStartTime || now);
     if (this.gameState.scores[taggerId] !== undefined) {
-      this.gameState.scores[taggerId] += Math.max(0, 300 - timeAsIt / 1000); // Points based on how quickly they tagged
+      this.gameState.scores[taggerId] += Math.max(
+        0,
+        this.MAX_TAG_SCORE - timeAsIt / this.MILLISECONDS_PER_SECOND
+      ); // Points based on how quickly they tagged
     }
 
     // Transfer 'it' status
@@ -149,8 +175,7 @@ export class GameManager {
 
     this.callbacks.onGameStateUpdate?.(this.gameState);
     this.callbacks.onPlayerUpdate?.(this.players);
-
-    console.log(
+    this.gmDebug(
       `${tagger.name} tagged ${tagged.name}! ${tagged.name} is now IT!`
     );
     return true;
@@ -181,7 +206,7 @@ export class GameManager {
       }))
       .sort((a, b) => b.score - a.score);
 
-    console.log("Game ended! Final scores:", results);
+    this.gmDebug("Game ended! Final scores:", results);
 
     // Reset player states
     this.players.forEach((player) => {

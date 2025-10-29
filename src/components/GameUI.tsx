@@ -137,7 +137,7 @@ const GameUI: React.FC<GameUIProps> = ({
       {players.size >= 2 || players.size === 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <button
-            onClick={() => onStartGame("tag")}
+            onClick={() => onStartGame(players.size === 0 ? "solo" : "tag")}
             style={{
               padding: "8px 16px",
               backgroundColor: "rgba(74, 144, 226, 0.8)",

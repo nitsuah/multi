@@ -36,6 +36,44 @@ interface UserWrapperProps {
   isIt?: boolean;
 }
 
+// Top-level gated debug logger - only logs in dev
+let __isDev = false;
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - import.meta may not be available
+try {
+  // access import.meta in a try to avoid environments where it might not be available
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore - import.meta may not be available
+  if (import.meta && import.meta.env && import.meta.env.DEV) {
+    __isDev = true;
+  }
+} catch {
+  // ignore
+}
+
+// Also enable debug if Node's NODE_ENV is not production (useful in test envs)
+try {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore - process may not be defined in browser
+  if (
+    typeof process !== "undefined" &&
+    process.env &&
+    process.env.NODE_ENV &&
+    process.env.NODE_ENV !== "production"
+  ) {
+    __isDev = true;
+  }
+} catch {
+  // ignore
+}
+
+const debug = (...args: unknown[]) => {
+  if (__isDev) {
+     
+    console.log(...args);
+  }
+};
+
 const UserWrapper: React.FC<UserWrapperProps> = ({
   position,
   rotation,
@@ -98,10 +136,22 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   const direction = useRef(new THREE.Vector3());
   const cameraOffset = useRef(new THREE.Vector3(0, 3, -5)); // Camera position relative to player
   const cameraRotation = useRef({ horizontal: 0, vertical: 0.2 }); // Track camera rotation
+  const skycam = useRef(false);
   const previousMouse = useRef({ x: 0, y: 0 });
   const isFirstMouse = useRef(true);
   const collisionSystem = useRef(new CollisionSystem());
   const lastTagCheck = useRef(0);
+
+  // gated debug logger - only logs in dev
+  const debug = (...args: unknown[]) => {
+    // Vite exposes import.meta.env.DEV; fall back to false if undefined
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (import.meta && import.meta.env && import.meta.env.DEV) {
+       
+      console.log(...args);
+    }
+  };
 
   useFrame((state, delta) => {
     if (!meshRef.current) return;
@@ -118,6 +168,7 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       const deltaY = mouseControls.mouseY - previousMouse.current.y;
 
       const sensitivity = 0.002;
+      // Left-drag rotates camera and player facing
       cameraRotation.current.horizontal -= deltaX * sensitivity;
       cameraRotation.current.vertical += deltaY * sensitivity;
 
@@ -131,6 +182,32 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       previousMouse.current.y = mouseControls.mouseY;
     } else {
       isFirstMouse.current = true;
+    }
+
+    // Skycam: right-drag moves camera without rotating player
+    if (mouseControls.rightClick) {
+      if (isFirstMouse.current) {
+        previousMouse.current.x = mouseControls.mouseX;
+        previousMouse.current.y = mouseControls.mouseY;
+        isFirstMouse.current = false;
+      }
+
+      const deltaX = mouseControls.mouseX - previousMouse.current.x;
+      const deltaY = mouseControls.mouseY - previousMouse.current.y;
+      const sensitivity = 0.003;
+
+      // enable skycam flag
+      skycam.current = true;
+
+      // adjust camera rotation for skycam
+      cameraRotation.current.horizontal -= deltaX * sensitivity;
+      cameraRotation.current.vertical += deltaY * sensitivity;
+
+      previousMouse.current.x = mouseControls.mouseX;
+      previousMouse.current.y = mouseControls.mouseY;
+    } else {
+      // when right button released, disable skycam
+      skycam.current = false;
     }
 
     // Calculate camera offset based on rotation
@@ -227,7 +304,7 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
               ) {
                 // 1 second cooldown
 
-                console.log(`Attempting to tag player ${clientId}`);
+                debug(`Attempting to tag player ${clientId}`);
                 if (gameManager.tagPlayer(myId, clientId)) {
                   socketClient.emit("player-tagged", {
                     taggerId: myId,
@@ -243,20 +320,19 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
         // Move the character to resolved position
         meshRef.current.position.copy(resolvedPosition);
 
-        // Debug: Log position changes
+        // Debug: Log position changes (gated)
         if (
           Math.abs(direction.current.x) > 0 ||
           Math.abs(direction.current.z) > 0
         ) {
-          console.log(
-            "Character position:",
-            meshRef.current.position.toArray()
-          );
+          debug("Character position:", meshRef.current.position.toArray());
         }
 
-        // Rotate character to face movement direction
+        // Rotate character to face movement direction only when not in skycam
         const angle = Math.atan2(direction.current.x, direction.current.z);
-        meshRef.current.rotation.y = angle;
+        if (!skycam.current) {
+          meshRef.current.rotation.y = angle;
+        }
 
         // Emit position to server
         if (socketClient) {
@@ -276,7 +352,14 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
     );
 
     // Lerp camera position for smooth following
-    state.camera.position.lerp(idealCameraPosition, 0.1);
+    // If skycam is active, raise the camera and lerp more slowly for a floating feel
+    if (skycam.current) {
+      const skyTarget = idealCameraPosition.clone();
+      skyTarget.y += 12; // raise camera when in skycam
+      state.camera.position.lerp(skyTarget, 0.06);
+    } else {
+      state.camera.position.lerp(idealCameraPosition, 0.1);
+    }
 
     // Make camera look at the character
     state.camera.lookAt(
@@ -376,7 +459,7 @@ const Solo: React.FC = () => {
   const attemptReconnect = useCallback(() => {
     if (reconnectAttempts.current < RECONNECT_ATTEMPTS) {
       const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current);
-      console.log(
+      debug(
         `Reconnecting in ${delay}ms (attempt ${
           reconnectAttempts.current + 1
         }/${RECONNECT_ATTEMPTS})`
@@ -404,7 +487,7 @@ const Solo: React.FC = () => {
     });
 
     socket.on("connect", () => {
-      console.log("Socket connected:", socket.id);
+      debug("Socket connected:", socket.id);
       setIsConnected(true);
       reconnectAttempts.current = 0;
 
@@ -431,7 +514,7 @@ const Solo: React.FC = () => {
     });
 
     socket.on("disconnect", (reason) => {
-      console.log("Socket disconnected:", reason);
+      debug("Socket disconnected:", reason);
       setIsConnected(false);
 
       // Remove player from game manager
@@ -446,6 +529,7 @@ const Solo: React.FC = () => {
     });
 
     socket.on("connect_error", (error) => {
+      // Always log connection errors regardless of DEV flag
       console.error("Socket connection error:", error);
       attemptReconnect();
     });
@@ -466,12 +550,12 @@ const Solo: React.FC = () => {
 
   // Keyboard controls
   useEffect(() => {
-    console.log("Setting up keyboard controls");
+    debug("Setting up keyboard controls");
     keyDisplayRef.current = new KeyDisplay();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      console.log("Key down:", key);
+      debug("Key down:", key);
 
       // Handle chat toggle
       if (key === "c" && !chatVisible) {
@@ -489,7 +573,7 @@ const Solo: React.FC = () => {
 
     const handleKeyUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      console.log("Key up:", key);
+      debug("Key up:", key);
 
       // Only process movement keys if chat is not visible
       if (!chatVisible && [W, A, S, D, SHIFT].includes(key)) {
@@ -540,7 +624,7 @@ const Solo: React.FC = () => {
     window.addEventListener("contextmenu", handleContextMenu);
 
     return () => {
-      console.log("Cleaning up keyboard and mouse controls");
+      debug("Cleaning up keyboard and mouse controls");
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("mousedown", handleMouseDown);
@@ -577,17 +661,23 @@ const Solo: React.FC = () => {
     });
 
     socketClient.on("chat-message", (message: ChatMessage) => {
-      setChatMessages((prev) => [
-        ...prev.slice(-(MAX_CHAT_MESSAGES - 1)),
-        message,
-      ]); // Keep last 50 messages
+      setChatMessages((prev) => {
+        if (prev.length < MAX_CHAT_MESSAGES) {
+          return [...prev, message];
+        }
+        // Avoid copying large arrays every time: rotate
+        const copied = prev.slice();
+        copied.shift();
+        copied.push(message);
+        return copied;
+      });
     });
 
     // Game-related socket events
     socketClient.on(
       "game-start",
       (gameData: { mode: string; duration: number }) => {
-        console.log("Game started:", gameData);
+        debug("Game started:", gameData);
         if (gameManager.current) {
           gameManager.current.startTagGame(gameData.duration);
         }
@@ -597,7 +687,7 @@ const Solo: React.FC = () => {
     socketClient.on(
       "player-tagged",
       (data: { taggerId: string; taggedId: string }) => {
-        console.log("Player tagged:", data);
+        debug("Player tagged:", data);
         if (gameManager.current) {
           gameManager.current.tagPlayer(data.taggerId, data.taggedId);
         }
@@ -637,13 +727,34 @@ const Solo: React.FC = () => {
     setChatVisible(!chatVisible);
   };
 
+  // Generate stable local ID using useState with lazy initializer (React-approved pattern)
+  const [localPlayerId] = useState(
+    () => `local-${Math.random().toString(36).slice(2, 8)}`
+  );
+
   const handleStartGame = (mode: string) => {
-    if (!socketClient || !gameManager.current) return;
+    if (!gameManager.current) return;
+
+    // If we're offline (no socket client), ensure there is a local player in the game manager
+    const currentId = socketClient?.id || localPlayerId;
+    if (!gameManager.current.getPlayers().has(currentId)) {
+      gameManager.current.addPlayer({
+        id: currentId,
+        name: `Player ${currentId.slice(-4)}`,
+        position: [0, 0.5, 0],
+        rotation: [0, 0, 0],
+      });
+      // If we're using a local id, also update local gamePlayers map for UI
+      setGamePlayers(new Map(gameManager.current.getPlayers()));
+    }
 
     if (mode === "tag") {
       const started = gameManager.current.startTagGame(180); // 3 minutes
       if (started) {
-        socketClient.emit("game-start", { mode: "tag", duration: 180 });
+        // Only emit to server when connected
+        if (socketClient && isConnected) {
+          socketClient.emit("game-start", { mode: "tag", duration: 180 });
+        }
       }
     }
   };
@@ -679,7 +790,7 @@ const Solo: React.FC = () => {
     if (now - lastEmitTime.current < 50) return;
     lastEmitTime.current = now;
 
-    console.log("Emitting movement:", keysPressed);
+    debug("Emitting movement:", keysPressed);
     // Emit basic movement state for now (will integrate with CharacterControls later)
     socketClient.emit("move", { keysPressed });
   }, [keysPressed, socketClient, isConnected]);
@@ -724,7 +835,7 @@ const Solo: React.FC = () => {
           opacity: 0.5,
         }}
       >
-        Solo Mode - Offline
+        Solo — Offline
       </div>
       <Canvas
         camera={{ position: [0, 3, -5], near: 0.1, far: 1000 }}

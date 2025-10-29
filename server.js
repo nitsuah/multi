@@ -128,25 +128,19 @@ ioServer.on('connection', (client) => {
     // Handle chat messages
     client.on('chat-message', (message) => {
         console.log(`Chat message from ${client.id}: ${message.message}`)
-        
-        // Basic profanity filter (simple word replacement)
-        const profanityFilter = (text) => {
-            const badWords = ['fuck', 'shit', 'damn', 'bitch', 'asshole', 'bastard']
-            let filtered = text
-            badWords.forEach(word => {
-                const regex = new RegExp(word, 'gi')
-                filtered = filtered.replace(regex, '*'.repeat(word.length))
-            })
-            return filtered
-        }
-        
-        // Filter the message
+
+        // Basic profanity filter (configurable in CHAT_PROFANITY) - use helper
+        const defaultBadWords = ['fuck', 'shit', 'damn', 'bitch', 'asshole', 'bastard']
+        const { getBadWordsFromEnv, filterText } = await import('./server/profanity.js');
+        const envList = getBadWordsFromEnv(process.env.CHAT_PROFANITY);
+        const badWords = envList && envList.length > 0 ? envList : defaultBadWords;
+
         const filteredMessage = {
             ...message,
-            message: profanityFilter(message.message),
-            timestamp: Date.now() // Server timestamp for consistency
+            message: filterText(message.message, badWords),
+            timestamp: Date.now(),
         }
-        
+
         // Broadcast to all clients
         ioServer.sockets.emit('chat-message', filteredMessage)
     })
@@ -156,17 +150,19 @@ ioServer.on('connection', (client) => {
         console.log(`Game start requested by ${client.id}:`, gameData)
         
         const playerCount = Object.keys(clients).length
-        if (playerCount >= 2) {
+        // Support explicit solo practice mode (allow when at least 1 player exists)
+        const isSoloRequest = gameData && gameData.mode === 'solo'
+        if ((isSoloRequest && playerCount >= 1) || (!isSoloRequest && playerCount >= 2)) {
             gameState.isActive = true
             gameState.mode = gameData.mode
             gameState.startTime = Date.now()
-            
+
             // Pick random 'it' player
             const playerIds = Object.keys(clients)
             gameState.itPlayerId = playerIds[Math.floor(Math.random() * playerIds.length)]
-            
+
             console.log(`Game started! ${gameState.itPlayerId} is IT!`)
-            
+
             // Broadcast game start to all clients
             ioServer.sockets.emit('game-start', {
                 ...gameData,
