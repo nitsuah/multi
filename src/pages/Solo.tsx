@@ -18,6 +18,9 @@ import { KeyDisplay, W, A, S, D, SHIFT } from "../components/utils";
 import { MobileJoystick } from "../components/MobileJoystick";
 import { useOrientation } from "../components/useOrientation";
 import "../styles/App.css";
+import { getSoundManager } from "../components/SoundManager";
+import PauseMenu from "../components/PauseMenu";
+import { useNavigate } from "react-router-dom";
 
 const RECONNECT_ATTEMPTS = 5;
 const RECONNECT_DELAY = 1000; // Start with 1 second
@@ -125,6 +128,8 @@ interface PlayerCharacterProps {
   currentPlayerId: string;
   joystickMove: { x: number; y: number };
   joystickCamera: { x: number; y: number };
+  lastWalkSoundTimeRef: React.MutableRefObject<number>;
+  isPaused: boolean;
 }
 
 const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
@@ -136,6 +141,8 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   currentPlayerId,
   joystickMove,
   joystickCamera,
+  lastWalkSoundTimeRef,
+  isPaused,
 }) => {
   const meshRef = useRef<THREE.Group>(null);
   const velocity = useRef(new THREE.Vector3());
@@ -159,7 +166,7 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   };
 
   useFrame((state, delta) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || isPaused) return; // Don't update if paused
 
     // WoW-style camera controls
     const bothMouseButtons =
@@ -248,6 +255,17 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
     const hasKeyboardInput =
       keysPressed[W] || keysPressed[S] || keysPressed[A] || keysPressed[D];
     const hasJoystickInput = joystickMove.x !== 0 || joystickMove.y !== 0;
+
+    // Debug: Log keyboard input detection
+    if (hasKeyboardInput && Math.random() < 0.01) {
+      // Only log 1% of frames to avoid spam
+      debug("Keys pressed:", {
+        w: keysPressed[W],
+        a: keysPressed[A],
+        s: keysPressed[S],
+        d: keysPressed[D],
+      });
+    }
 
     // WoW-style auto-run: both mouse buttons held = move forward
     if (bothMouseButtons || hasKeyboardInput || hasJoystickInput) {
@@ -341,6 +359,10 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
 
                 debug(`Attempting to tag player ${clientId}`);
                 if (gameManager.tagPlayer(myId, clientId)) {
+                  // Play tag sound
+                  const soundMgr = getSoundManager();
+                  soundMgr.playTagSound();
+
                   if (socketClient) {
                     socketClient.emit("player-tagged", {
                       taggerId: myId,
@@ -356,6 +378,15 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
 
         // Move the character to resolved position
         meshRef.current.position.copy(resolvedPosition);
+
+        // Play walking sound (throttled to avoid spam)
+        const now = Date.now();
+        const walkSoundInterval = keysPressed[SHIFT] ? 250 : 400; // Faster sounds when running
+        if (now - lastWalkSoundTimeRef.current > walkSoundInterval) {
+          const soundMgr = getSoundManager();
+          soundMgr.playWalkSound();
+          lastWalkSoundTimeRef.current = now;
+        }
 
         // Debug: Log position changes (gated)
         if (
@@ -428,14 +459,21 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
 };
 
 const Solo: React.FC = () => {
+  const navigate = useNavigate();
   const [socketClient, setSocketClient] = useState<Socket | null>(null);
   const [clients, setClients] = useState<Clients>({});
   const [isConnected, setIsConnected] = useState(false);
   const [currentFPS, setCurrentFPS] = useState(60);
   const [quality, setQuality] = useState<QualityLevel>("auto");
-  const [keysPressed, setKeysPressed] = useState<{ [key: string]: boolean }>(
-    {}
-  );
+  const [isPaused, setIsPaused] = useState(false);
+  const [isSoundMuted, setIsSoundMuted] = useState(false);
+  const [keysPressed, setKeysPressed] = useState<{ [key: string]: boolean }>({
+    [W]: false,
+    [A]: false,
+    [S]: false,
+    [D]: false,
+    [SHIFT]: false,
+  });
   const [mouseControls, setMouseControls] = useState({
     leftClick: false,
     rightClick: false,
@@ -468,6 +506,8 @@ const Solo: React.FC = () => {
   const keyDisplayRef = useRef<KeyDisplay | null>(null);
   const lastEmitTime = useRef(0);
   const gameManager = useRef<GameManager | null>(null);
+  const soundManager = useRef(getSoundManager());
+  const lastWalkSoundTime = useRef(0);
 
   // Quality presets
   const getQualitySettings = (level: QualityLevel) => {
@@ -631,8 +671,21 @@ const Solo: React.FC = () => {
       });
 
       setGamePlayers(new Map(newGameManager.getPlayers()));
+
+      // Start background music
+      setTimeout(() => {
+        soundManager.current.startBackgroundMusic();
+      }, 1000);
     }
   }, [localPlayerId]);
+
+  // Cleanup sound on unmount
+  useEffect(() => {
+    const manager = soundManager.current;
+    return () => {
+      manager.dispose();
+    };
+  }, []);
 
   // Keyboard controls
   useEffect(() => {
@@ -643,17 +696,35 @@ const Solo: React.FC = () => {
       const key = e.key.toLowerCase();
       debug("Key down:", key);
 
+      // Handle ESC key for pause menu
+      if (key === "escape") {
+        e.preventDefault();
+        setIsPaused((prev) => !prev);
+        return;
+      }
+
       // Handle chat toggle
-      if (key === "c" && !chatVisible) {
+      if (key === "c" && !chatVisible && !isPaused) {
         setChatVisible(true);
         return;
       }
 
-      // Only process movement keys if chat is not visible
-      if (!chatVisible && [W, A, S, D, SHIFT].includes(key)) {
+      // Only process movement keys if chat is not visible and game is not paused
+      if (!chatVisible && !isPaused && [W, A, S, D, SHIFT].includes(key)) {
         e.preventDefault(); // Prevent default browser behavior
         setKeysPressed((prev) => ({ ...prev, [key]: true }));
         keyDisplayRef.current?.down(key);
+      } else {
+        debug(
+          "Key not processed:",
+          key,
+          "chatVisible:",
+          chatVisible,
+          "isPaused:",
+          isPaused,
+          "isMovementKey:",
+          [W, A, S, D, SHIFT].includes(key)
+        );
       }
     };
 
@@ -661,8 +732,8 @@ const Solo: React.FC = () => {
       const key = e.key.toLowerCase();
       debug("Key up:", key);
 
-      // Only process movement keys if chat is not visible
-      if (!chatVisible && [W, A, S, D, SHIFT].includes(key)) {
+      // Only process movement keys if chat is not visible and game is not paused
+      if (!chatVisible && !isPaused && [W, A, S, D, SHIFT].includes(key)) {
         e.preventDefault();
         setKeysPressed((prev) => ({ ...prev, [key]: false }));
         keyDisplayRef.current?.up(key);
@@ -729,7 +800,7 @@ const Solo: React.FC = () => {
         });
       }
     };
-  }, [chatVisible]);
+  }, [chatVisible, isPaused]);
 
   useEffect(() => {
     if (!socketClient) return;
@@ -848,10 +919,39 @@ const Solo: React.FC = () => {
   };
 
   const handleEndGame = () => {
-    if (!socketClient || !gameManager.current) return;
+    if (!gameManager.current) return;
 
     gameManager.current.endGame();
-    socketClient.emit("game-end");
+    if (socketClient) {
+      socketClient.emit("game-end");
+    }
+  };
+
+  const handlePauseResume = () => {
+    setIsPaused(false);
+  };
+
+  const handlePauseRestart = () => {
+    // Reset game state
+    setIsPaused(false);
+
+    // End current game if active
+    if (gameManager.current) {
+      gameManager.current.endGame();
+    }
+
+    // Reset player position
+    // This would require resetting the mesh position, which we can do through a ref or state
+    // For now, just unpause and let player restart naturally
+  };
+
+  const handlePauseQuit = () => {
+    // Clean up and navigate to home
+    setIsPaused(false);
+    if (gameManager.current) {
+      gameManager.current.endGame();
+    }
+    navigate("/");
   };
 
   // Update game timer
@@ -864,6 +964,14 @@ const Solo: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [gameState.isActive]);
+
+  // Monitor keysPressed changes for debugging
+  useEffect(() => {
+    const anyKeyPressed = Object.values(keysPressed).some((pressed) => pressed);
+    if (anyKeyPressed) {
+      debug("Keys state updated:", keysPressed);
+    }
+  }, [keysPressed]);
 
   // Emit position updates (throttled to 50ms)
   useEffect(() => {
@@ -891,11 +999,42 @@ const Solo: React.FC = () => {
           : "mobile-layout-landscape"
       }
     >
+      <PauseMenu
+        isVisible={isPaused}
+        onResume={handlePauseResume}
+        onRestart={handlePauseRestart}
+        onQuit={handlePauseQuit}
+      />
       <Tutorial />
       <HelpModal />
       <ThemeToggle />
       <PerformanceMonitor onPerformanceChange={setCurrentFPS} />
       <QualitySettings onChange={setQuality} currentFPS={currentFPS} />
+
+      {/* Sound toggle button */}
+      <button
+        onClick={() => {
+          const isMuted = soundManager.current.toggleMute();
+          setIsSoundMuted(isMuted);
+          console.log(isMuted ? "Sound muted" : "Sound unmuted");
+        }}
+        style={{
+          position: "fixed",
+          top: "10px",
+          left: "10px",
+          padding: "8px 12px",
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          border: "1px solid rgba(255, 255, 255, 0.3)",
+          borderRadius: "4px",
+          color: "white",
+          cursor: "pointer",
+          fontSize: "20px",
+          zIndex: 1000,
+        }}
+        title="Toggle sound"
+      >
+        {isSoundMuted ? "🔇" : "🔊"}
+      </button>
       <ChatBox
         isVisible={chatVisible}
         onToggle={toggleChat}
@@ -936,6 +1075,14 @@ const Solo: React.FC = () => {
         shadows={qualitySettings.shadows}
         dpr={qualitySettings.pixelRatio}
         gl={{ antialias: qualitySettings.antialias }}
+        style={{
+          width: "100vw",
+          height: "100vh",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          touchAction: "none",
+        }}
       >
         <OrbitControls enabled={false} />
         <ambientLight intensity={0.7} />
@@ -995,6 +1142,8 @@ const Solo: React.FC = () => {
           currentPlayerId={socketClient?.id || localPlayerId}
           joystickMove={joystickMove}
           joystickCamera={joystickCamera}
+          lastWalkSoundTimeRef={lastWalkSoundTime}
+          isPaused={isPaused}
         />
 
         {/* Inert Bot - placeholder for future AI opponent */}

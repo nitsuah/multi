@@ -84,10 +84,17 @@
   border-radius: 50%;
 }
 
-/* Hide on desktop by default */
-@media (min-width: 768px) {
+/* Hide on desktop (non-touch devices) by default */
+@media (hover: hover) and (pointer: fine) {
   .joystick-container {
-    display: none;
+    display: none !important;
+  }
+}
+
+/* Show only on touch devices regardless of screen size */
+@media (hover: none) and (pointer: coarse) {
+  .joystick-container {
+    display: block;
   }
 }
 
