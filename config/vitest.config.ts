@@ -9,8 +9,12 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
         },
-        sequence: {
-            concurrent: false,
+        pool: 'threads',
+        // @ts-expect-error - poolOptions types are incomplete in vitest 4
+        poolOptions: {
+            threads: {
+                singleThread: true,
+            },
         },
     },
 })
