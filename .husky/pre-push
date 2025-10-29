@@ -1,7 +1,30 @@
 #!/usr/bin/env sh
-echo "🔍 Running pre-push validation..."
+set -e
 
-# Skip pre-push for now - just allow the push
-echo "⚠️  Pre-push checks disabled (npm path issues on Windows)"
-echo "   Run before pushing: npm run lint && npm run typecheck && npm run test:run"
-exit 0
+echo "🔍 Running pre-push validation (same as CI)..."
+
+# Source nvm if it exists
+if [ -f "$HOME/.nvm/nvm.sh" ]; then
+    . "$HOME/.nvm/nvm.sh"
+fi
+
+# Add common Windows Node.js paths
+export PATH="$PATH:/c/Program Files/nodejs:/c/Program Files (x86)/nodejs"
+export PATH="$PATH:$APPDATA/npm:$HOME/AppData/Roaming/npm"
+
+# Run CI checks
+if command -v npm >/dev/null 2>&1; then
+    echo "✓ Running typecheck..."
+    npm run typecheck || exit 1
+    
+    echo "✓ Running lint..."
+    npm run lint || exit 1
+    
+    echo "✓ Running tests..."
+    npm run test:ci || exit 1
+    
+    echo "✅ All pre-push checks passed!"
+else
+    echo "⚠️  WARNING: npm not found. Skipping pre-push checks."
+    echo "   Run manually: npm run ci"
+fi
