@@ -416,6 +416,10 @@ const Solo: React.FC = () => {
   );
   const [currentGameManager, setCurrentGameManager] =
     useState<GameManager | null>(null);
+  // Generate stable local ID using useState with lazy initializer (React-approved pattern)
+  const [localPlayerId] = useState(
+    () => `local-${Math.random().toString(36).slice(2, 8)}`
+  );
   const reconnectAttempts = useRef(0);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const keyDisplayRef = useRef<KeyDisplay | null>(null);
@@ -700,35 +704,35 @@ const Solo: React.FC = () => {
     };
   }, [socketClient]);
 
-  const handleSendMessage = (message: string) => {
-    if (!socketClient || !isConnected) return;
+  const handleSendMessage = useCallback(
+    (message: string) => {
+      const chatMessage: ChatMessage = {
+        id: Date.now().toString(),
+        playerId: socketClient?.id || localPlayerId,
+        playerName: socketClient?.id
+          ? `Player ${socketClient.id.slice(-4)}`
+          : "Solo Player",
+        message,
+        timestamp: Date.now(),
+      };
 
-    const chatMessage: ChatMessage = {
-      id: Date.now().toString(),
-      playerId: socketClient.id || "unknown",
-      playerName: `Player ${socketClient.id?.slice(-4) || "????"}`,
-      message,
-      timestamp: Date.now(),
-    };
+      // Add to local messages immediately for responsive UI
+      setChatMessages((prev) => [
+        ...prev.slice(-(MAX_CHAT_MESSAGES - 1)),
+        chatMessage,
+      ]);
 
-    // Add to local messages immediately for responsive UI
-    setChatMessages((prev) => [
-      ...prev.slice(-(MAX_CHAT_MESSAGES - 1)),
-      chatMessage,
-    ]);
-
-    // Emit to server
-    socketClient.emit("chat-message", chatMessage);
-  };
+      // Emit to server if connected (optional for solo mode)
+      if (socketClient && isConnected) {
+        socketClient.emit("chat-message", chatMessage);
+      }
+    },
+    [socketClient, isConnected, localPlayerId]
+  );
 
   const toggleChat = () => {
     setChatVisible(!chatVisible);
   };
-
-  // Generate stable local ID using useState with lazy initializer (React-approved pattern)
-  const [localPlayerId] = useState(
-    () => `local-${Math.random().toString(36).slice(2, 8)}`
-  );
 
   const handleStartGame = (mode: string) => {
     if (!gameManager.current) return;
