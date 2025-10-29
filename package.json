@@ -12,8 +12,8 @@
         "lint:fix": "eslint src --config ./config/eslint.config.js --max-warnings=0 --fix",
         "precommit": "lint-staged --config ./config/lint-staged.config.json",
         "test": "vitest --config ./config/vitest.config.ts",
-        "test:ci": "vitest run --coverage --config ./config/vitest.config.ts --no-file-parallelism",
-        "test:run": "vitest run --config ./config/vitest.config.ts --no-file-parallelism",
+        "test:ci": "vitest run --coverage --config ./config/vitest.config.ts --pool=forks --poolOptions.forks.singleFork",
+        "test:run": "vitest run --config ./config/vitest.config.ts --pool=forks --poolOptions.forks.singleFork",
         "prepare": "husky install"
     },
     "overrides": {
