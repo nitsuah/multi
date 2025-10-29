@@ -24,11 +24,11 @@ const Home = () => {
           </div>
         </div>
         <div className="projects-card bg-blur">
-          <button className="neutral-wallet">
-            <h3>PLAY</h3>
+          <button className="neutral-wallet" disabled>
+            <h3>PAY TO PLAY</h3>
           </button>
           <div>
-            <h4>Free to play Multiplayer!</h4>
+            <h4>Multiplayer (Coming Soon)</h4>
           </div>
         </div>
         <div className="projects-card bg-blur">
@@ -47,6 +47,16 @@ const Home = () => {
             <p>The Mint contract will fund projects directly.</p>
           </div>
         </div>
+      </div>
+
+      {/* Upcoming Features Section */}
+      <div className="upcoming-features">
+        <h3>🚀 Upcoming Features</h3>
+        <ul>
+          <li>🎮 Collectible Hunt Mode - First to collect wins!</li>
+          <li>🏁 Race Mode - Checkpoint-based racing with lap times</li>
+          <li>😎 Emotes & Quick Actions - Express yourself in-game</li>
+        </ul>
       </div>
     </div>
   );

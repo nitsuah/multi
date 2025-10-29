@@ -14,5 +14,6 @@ lighthouse-report.html
 lighthouse-report.json
 
 TODO.md
+docs/TODO.md
 lint.log
 test.log

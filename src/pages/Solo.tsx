@@ -114,6 +114,7 @@ interface PlayerCharacterProps {
   mouseControls: {
     leftClick: boolean;
     rightClick: boolean;
+    middleClick: boolean;
     mouseX: number;
     mouseY: number;
   };
@@ -154,8 +155,16 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   useFrame((state, delta) => {
     if (!meshRef.current) return;
 
+    // WoW-style camera controls
+    const bothMouseButtons =
+      mouseControls.leftClick && mouseControls.rightClick;
+
     // Handle mouse camera rotation
-    if (mouseControls.leftClick) {
+    if (
+      mouseControls.leftClick ||
+      mouseControls.rightClick ||
+      mouseControls.middleClick
+    ) {
       if (isFirstMouse.current) {
         previousMouse.current.x = mouseControls.mouseX;
         previousMouse.current.y = mouseControls.mouseY;
@@ -166,9 +175,24 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       const deltaY = mouseControls.mouseY - previousMouse.current.y;
 
       const sensitivity = 0.002;
-      // Left-drag rotates camera and player facing
-      cameraRotation.current.horizontal -= deltaX * sensitivity;
-      cameraRotation.current.vertical += deltaY * sensitivity;
+
+      if (bothMouseButtons) {
+        // Both buttons: Rotate camera AND player (for movement control)
+        cameraRotation.current.horizontal -= deltaX * sensitivity;
+        cameraRotation.current.vertical += deltaY * sensitivity;
+        skycam.current = false;
+      } else if (mouseControls.rightClick) {
+        // Right-click only: Rotate camera AND player facing (WoW style)
+        cameraRotation.current.horizontal -= deltaX * sensitivity;
+        cameraRotation.current.vertical += deltaY * sensitivity;
+        skycam.current = false;
+      } else if (mouseControls.middleClick) {
+        // Middle-click: Rotate camera WITHOUT rotating player (peek mode)
+        skycam.current = true;
+        cameraRotation.current.horizontal -= deltaX * sensitivity;
+        cameraRotation.current.vertical += deltaY * sensitivity;
+      }
+      // Left-click is now free for interactions (no camera control)
 
       // Clamp vertical rotation
       cameraRotation.current.vertical = Math.max(
@@ -180,31 +204,6 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       previousMouse.current.y = mouseControls.mouseY;
     } else {
       isFirstMouse.current = true;
-    }
-
-    // Skycam: right-drag moves camera without rotating player
-    if (mouseControls.rightClick) {
-      if (isFirstMouse.current) {
-        previousMouse.current.x = mouseControls.mouseX;
-        previousMouse.current.y = mouseControls.mouseY;
-        isFirstMouse.current = false;
-      }
-
-      const deltaX = mouseControls.mouseX - previousMouse.current.x;
-      const deltaY = mouseControls.mouseY - previousMouse.current.y;
-      const sensitivity = 0.003;
-
-      // enable skycam flag
-      skycam.current = true;
-
-      // adjust camera rotation for skycam
-      cameraRotation.current.horizontal -= deltaX * sensitivity;
-      cameraRotation.current.vertical += deltaY * sensitivity;
-
-      previousMouse.current.x = mouseControls.mouseX;
-      previousMouse.current.y = mouseControls.mouseY;
-    } else {
-      // when right button released, disable skycam
       skycam.current = false;
     }
 
@@ -225,7 +224,11 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
     // Calculate direction based on keys pressed and camera rotation
     direction.current.set(0, 0, 0);
 
-    if (keysPressed[W] || keysPressed[S] || keysPressed[A] || keysPressed[D]) {
+    const hasKeyboardInput =
+      keysPressed[W] || keysPressed[S] || keysPressed[A] || keysPressed[D];
+
+    // WoW-style auto-run: both mouse buttons held = move forward
+    if (bothMouseButtons || hasKeyboardInput) {
       // Movement relative to camera direction
       const forward = new THREE.Vector3();
       const right = new THREE.Vector3();
@@ -242,6 +245,12 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
         -Math.sin(cameraRotation.current.horizontal)
       );
 
+      // Both mouse buttons: auto-run forward
+      if (bothMouseButtons) {
+        direction.current.add(forward);
+      }
+
+      // Keyboard input (can combine with mouse movement)
       if (keysPressed[W]) direction.current.add(forward);
       if (keysPressed[S]) direction.current.sub(forward);
       if (keysPressed[A]) direction.current.sub(right);
@@ -266,7 +275,7 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
         );
 
         // Check for player-to-player collisions and tagging
-        const myId = socketClient?.id;
+        const myId = socketClient?.id || currentPlayerId;
         if (myId && gameManager) {
           const currentPlayer = gameManager.getPlayers().get(myId);
           const gameState = gameManager.getGameState();
@@ -304,10 +313,12 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
 
                 debug(`Attempting to tag player ${clientId}`);
                 if (gameManager.tagPlayer(myId, clientId)) {
-                  socketClient.emit("player-tagged", {
-                    taggerId: myId,
-                    taggedId: clientId,
-                  });
+                  if (socketClient) {
+                    socketClient.emit("player-tagged", {
+                      taggerId: myId,
+                      taggedId: clientId,
+                    });
+                  }
                   lastTagCheck.current = now;
                 }
               }
@@ -400,6 +411,7 @@ const Solo: React.FC = () => {
   const [mouseControls, setMouseControls] = useState({
     leftClick: false,
     rightClick: false,
+    middleClick: false,
     mouseX: 0,
     mouseY: 0,
   });
@@ -550,6 +562,29 @@ const Solo: React.FC = () => {
     };
   }, [connectSocket]);
 
+  // Initialize GameManager immediately for solo mode (even without socket)
+  useEffect(() => {
+    if (!gameManager.current) {
+      debug("Initializing GameManager for solo mode");
+      const newGameManager = new GameManager();
+      newGameManager.setCallbacks({
+        onGameStateUpdate: setGameState,
+        onPlayerUpdate: setGamePlayers,
+      });
+      gameManager.current = newGameManager;
+      setCurrentGameManager(newGameManager);
+
+      // Add local player
+      newGameManager.addPlayer({
+        id: localPlayerId,
+        name: "Solo Player",
+        position: [0, 0.5, 0],
+        rotation: [0, 0, 0],
+      });
+      setGamePlayers(new Map(newGameManager.getPlayers()));
+    }
+  }, [localPlayerId]);
+
   // Keyboard controls
   useEffect(() => {
     debug("Setting up keyboard controls");
@@ -586,14 +621,15 @@ const Solo: React.FC = () => {
     };
 
     const handleMouseDown = (e: MouseEvent) => {
-      // Prevent default context menu on right-click
-      if (e.button === 2) {
+      // Prevent default context menu on right-click and middle-click
+      if (e.button === 1 || e.button === 2) {
         e.preventDefault();
       }
 
       setMouseControls((prev) => ({
         ...prev,
         leftClick: e.button === 0 ? true : prev.leftClick,
+        middleClick: e.button === 1 ? true : prev.middleClick,
         rightClick: e.button === 2 ? true : prev.rightClick,
       }));
     };
@@ -602,6 +638,7 @@ const Solo: React.FC = () => {
       setMouseControls((prev) => ({
         ...prev,
         leftClick: e.button === 0 ? false : prev.leftClick,
+        middleClick: e.button === 1 ? false : prev.middleClick,
         rightClick: e.button === 2 ? false : prev.rightClick,
       }));
     };
@@ -809,12 +846,12 @@ const Solo: React.FC = () => {
         onToggle={toggleChat}
         messages={chatMessages}
         onSendMessage={handleSendMessage}
-        currentPlayerId={socketClient?.id || ""}
+        currentPlayerId={socketClient?.id || localPlayerId}
       />
       <GameUI
         gameState={gameState}
         players={gamePlayers}
-        currentPlayerId={socketClient?.id || ""}
+        currentPlayerId={socketClient?.id || localPlayerId}
         onStartGame={handleStartGame}
         onEndGame={handleEndGame}
       />
@@ -900,7 +937,7 @@ const Solo: React.FC = () => {
           mouseControls={mouseControls}
           clients={clients}
           gameManager={currentGameManager}
-          currentPlayerId={socketClient?.id || ""}
+          currentPlayerId={socketClient?.id || localPlayerId}
         />
         {Object.keys(clients)
           .filter((clientKey) => socketClient && clientKey !== socketClient.id)
