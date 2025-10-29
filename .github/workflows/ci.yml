@@ -25,7 +25,7 @@ jobs:
         run: npm run lint
 
       - name: Run tests
-        run: npx vitest run --coverage --config ./config/vitest.config.ts --no-file-parallelism
+        run: npm run test:ci
 
       - name: Build
         run: npm run build

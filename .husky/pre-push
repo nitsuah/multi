@@ -3,5 +3,5 @@ echo "🔍 Running pre-push validation..."
 
 # Skip pre-push for now - just allow the push
 echo "⚠️  Pre-push checks disabled (npm path issues on Windows)"
-echo "   Please run manually: npm run lint && npm run typecheck && npm test"
+echo "   Run before pushing: npm run lint && npm run typecheck && npm run test:run"
 exit 0
