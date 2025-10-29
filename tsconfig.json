@@ -17,6 +17,14 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "src/**/*.tsx", "src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "server",
+    "*.js",
+    "*.config.js",
+    "*.config.ts"
+  ]
 }
