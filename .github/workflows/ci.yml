@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [ main, phase-5 ]
   pull_request:
-    branches: [main, dev]
+    branches: [ main ]
 
 jobs:
   build-test-lint:
@@ -21,11 +21,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Type Check
+        run: npm run typecheck
+
       - name: Lint
         run: npm run lint
 
       - name: Run tests
-        run: npx vitest run --coverage --config ./config/vitest.config.ts
+        run: npm run test:ci
 
       - name: Build
         run: npm run build

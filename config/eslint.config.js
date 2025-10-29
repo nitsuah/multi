@@ -9,8 +9,8 @@ import prettier from 'eslint-config-prettier';
 export default [
   js.configs.recommended,
   {
-    files: ['**/*.{ts,tsx}'],
-    ignores: ['**/coverage/**', '**/dist/**', '**/node_modules/**'],
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    ignores: ['**/coverage/**', '**/dist/**', '**/node_modules/**', '**/.husky/**', '**/build/**'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -38,10 +38,20 @@ export default [
         clearTimeout: 'readonly',
         NodeJS: 'readonly',
         HTMLDivElement: 'readonly',
+        HTMLInputElement: 'readonly',
         EventTarget: 'readonly',
         HTMLElement: 'readonly',
         Element: 'readonly',
         Node: 'readonly',
+        KeyboardEvent: 'readonly',
+        MouseEvent: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        module: 'readonly',
+        require: 'readonly',
+        exports: 'readonly',
       },
     },
     plugins: {
@@ -57,7 +67,7 @@ export default [
       ...jsxA11y.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
-      'react/no-unknown-property': ['error', { ignore: ['position', 'rotation', 'geometry', 'material', 'intensity', 'castShadow', 'shadow-mapSize-width', 'shadow-mapSize-height', 'args'] }],
+      'react/no-unknown-property': ['error', { ignore: ['position', 'rotation', 'geometry', 'material', 'intensity', 'castShadow', 'shadow-mapSize-width', 'shadow-mapSize-height', 'args', 'transparent', 'receiveShadow'] }],
       'react-hooks/set-state-in-effect': 'off',
     },
     settings: {

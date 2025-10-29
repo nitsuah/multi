@@ -26,6 +26,11 @@ describe('KeyDisplay', () => {
       configurable: true,
       value: 1000,
     });
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 1920,
+    });
     
     keyDisplay = new KeyDisplay();
   });
@@ -53,49 +58,52 @@ describe('KeyDisplay', () => {
 
   it('sets correct styles on key elements', () => {
     const wElement = keyDisplay.map.get(W);
-    expect(wElement?.style.color).toBe('purple');
-    expect(wElement?.style.fontSize).toBe('10px');
-    expect(wElement?.style.fontWeight).toBe('800');
+    expect(wElement?.style.color).toBe('rgba(128, 0, 128, 0.7)');
+    expect(wElement?.style.fontSize).toBe('16px');
+    expect(wElement?.style.fontWeight).toBe('900');
     expect(wElement?.style.position).toBe('absolute');
-    expect(wElement?.textContent).toBe('w');
+    expect(wElement?.textContent).toBe('W');
   });
 
   it('positions keys correctly', () => {
     const wElement = keyDisplay.map.get(W);
     const aElement = keyDisplay.map.get(A);
     
-    expect(wElement?.style.top).toBe('850px'); // 1000 - 150
-    expect(aElement?.style.top).toBe('900px'); // 1000 - 100
-    expect(wElement?.style.left).toBe('300px');
-    expect(aElement?.style.left).toBe('200px');
+    const bottomY = window.innerHeight - 80; // 1000 - 80 = 920
+    const centerX = window.innerWidth / 2;
+    
+    expect(wElement?.style.top).toBe(`${bottomY - 30}px`); // 890px
+    expect(aElement?.style.top).toBe(`${bottomY}px`); // 920px
+    expect(wElement?.style.left).toBe(`${centerX}px`);
+    expect(aElement?.style.left).toBe(`${centerX - 25}px`);
   });
 
   it('changes color to red when key is pressed', () => {
     const wElement = keyDisplay.map.get(W);
-    expect(wElement?.style.color).toBe('purple');
+    expect(wElement?.style.color).toBe('rgba(128, 0, 128, 0.7)');
     
     keyDisplay.down('w');
-    expect(wElement?.style.color).toBe('red');
+    expect(wElement?.style.color).toBe('rgba(255, 100, 100, 0.9)');
   });
 
   it('changes color back to purple when key is released', () => {
     const wElement = keyDisplay.map.get(W);
     keyDisplay.down('w');
-    expect(wElement?.style.color).toBe('red');
+    expect(wElement?.style.color).toBe('rgba(255, 100, 100, 0.9)');
     
     keyDisplay.up('w');
-    expect(wElement?.style.color).toBe('purple');
+    expect(wElement?.style.color).toBe('rgba(128, 0, 128, 0.7)');
   });
 
   it('handles uppercase key input', () => {
     const shiftElement = keyDisplay.map.get(SHIFT);
-    expect(shiftElement?.style.color).toBe('purple');
+    expect(shiftElement?.style.color).toBe('rgba(128, 0, 128, 0.7)');
     
     keyDisplay.down('SHIFT');
-    expect(shiftElement?.style.color).toBe('red');
+    expect(shiftElement?.style.color).toBe('rgba(255, 100, 100, 0.9)');
     
     keyDisplay.up('SHIFT');
-    expect(shiftElement?.style.color).toBe('purple');
+    expect(shiftElement?.style.color).toBe('rgba(128, 0, 128, 0.7)');
   });
 
   it('ignores unknown keys', () => {
@@ -113,6 +121,7 @@ describe('KeyDisplay', () => {
     keyDisplay.updatePosition();
     
     const wElement = keyDisplay.map.get(W);
-    expect(wElement?.style.top).toBe('650px'); // 800 - 150
+    const bottomY = 800 - 80; // 720
+    expect(wElement?.style.top).toBe(`${bottomY - 30}px`); // 690px
   });
 });

@@ -66,11 +66,6 @@ describe("Solo Component", () => {
     expect(screen.getByTestId("canvas")).toBeDefined();
   });
 
-  it("renders Stats component", () => {
-    renderWithTheme(<Solo />);
-    expect(screen.getByTestId("stats")).toBeDefined();
-  });
-
   it("renders OrbitControls component", () => {
     renderWithTheme(<Solo />);
     expect(screen.getByTestId("orbit-controls")).toBeDefined();

@@ -5,9 +5,14 @@ node_modules
 .eslintcache
 .vscode
 .DS_Store
+.log
 
 coverage/
 coverage/*
 bundle-stats.html
 lighthouse-report.html
 lighthouse-report.json
+
+TODO.md
+lint.log
+test.log

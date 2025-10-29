@@ -97,6 +97,12 @@ const ioServer = new Server(server, {
 })
 
 let clients = {}
+let gameState = {
+    isActive: false,
+    mode: 'none',
+    itPlayerId: null,
+    startTime: null
+}
 
 // Socket app msgs
 ioServer.on('connection', (client) => {
@@ -117,6 +123,83 @@ ioServer.on('connection', (client) => {
         clients[id].rotation = rotation
 
         ioServer.sockets.emit('move', clients)
+    })
+
+    // Handle chat messages
+    client.on('chat-message', (message) => {
+        console.log(`Chat message from ${client.id}: ${message.message}`)
+
+        // Basic profanity filter (configurable in CHAT_PROFANITY) - use helper
+        const defaultBadWords = ['fuck', 'shit', 'damn', 'bitch', 'asshole', 'bastard']
+        const { getBadWordsFromEnv, filterText } = await import('./server/profanity.js');
+        const envList = getBadWordsFromEnv(process.env.CHAT_PROFANITY);
+        const badWords = envList && envList.length > 0 ? envList : defaultBadWords;
+
+        const filteredMessage = {
+            ...message,
+            message: filterText(message.message, badWords),
+            timestamp: Date.now(),
+        }
+
+        // Broadcast to all clients
+        ioServer.sockets.emit('chat-message', filteredMessage)
+    })
+
+    // Handle game start
+    client.on('game-start', (gameData) => {
+        console.log(`Game start requested by ${client.id}:`, gameData)
+        
+        const playerCount = Object.keys(clients).length
+        // Support explicit solo practice mode (allow when at least 1 player exists)
+        const isSoloRequest = gameData && gameData.mode === 'solo'
+        if ((isSoloRequest && playerCount >= 1) || (!isSoloRequest && playerCount >= 2)) {
+            gameState.isActive = true
+            gameState.mode = gameData.mode
+            gameState.startTime = Date.now()
+
+            // Pick random 'it' player
+            const playerIds = Object.keys(clients)
+            gameState.itPlayerId = playerIds[Math.floor(Math.random() * playerIds.length)]
+
+            console.log(`Game started! ${gameState.itPlayerId} is IT!`)
+
+            // Broadcast game start to all clients
+            ioServer.sockets.emit('game-start', {
+                ...gameData,
+                itPlayerId: gameState.itPlayerId,
+                startTime: gameState.startTime
+            })
+        } else {
+            client.emit('game-error', { message: 'Need at least 2 players to start' })
+        }
+    })
+
+    // Handle player tagging
+    client.on('player-tagged', (data) => {
+        console.log(`Tag attempt: ${data.taggerId} -> ${data.taggedId}`)
+        
+        if (gameState.isActive && gameState.mode === 'tag' && data.taggerId === gameState.itPlayerId) {
+            // Verify both players exist
+            if (clients[data.taggerId] && clients[data.taggedId]) {
+                gameState.itPlayerId = data.taggedId
+                console.log(`Tag successful! ${data.taggedId} is now IT!`)
+                
+                // Broadcast to all clients
+                ioServer.sockets.emit('player-tagged', data)
+            }
+        }
+    })
+
+    // Handle game end
+    client.on('game-end', () => {
+        console.log(`Game end requested by ${client.id}`)
+        
+        gameState.isActive = false
+        gameState.mode = 'none'
+        gameState.itPlayerId = null
+        gameState.startTime = null
+        
+        ioServer.sockets.emit('game-end')
     })
 
     client.on('disconnect', () => {

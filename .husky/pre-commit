@@ -1,18 +1,31 @@
 #!/usr/bin/env sh
 set -e
 
-echo "Running pre-commit hook..."
+echo "🔍 Running pre-commit hook..."
 
-# Add nodejs to PATH for Git Bash
-export PATH="$PATH:/c/Program Files/nodejs"
-
-# Now npm and node should both work
-if command -v npm >/dev/null 2>&1; then
-echo "Using Windows npm (nodejs added to PATH)..."
-npm exec lint-staged -- --config ./config/lint-staged.config.json
-else
-echo "ERROR: npm still not found after adding nodejs to PATH"
-exit 1
+# Source nvm if it exists (common on Windows)
+if [ -f "$HOME/.nvm/nvm.sh" ]; then
+    . "$HOME/.nvm/nvm.sh"
 fi
 
-echo "Pre-commit checks passed!"
+# Add common Windows Node.js paths
+export PATH="$PATH:/c/Program Files/nodejs:/c/Program Files (x86)/nodejs"
+export PATH="$PATH:$APPDATA/npm:$HOME/AppData/Roaming/npm"
+
+# Try multiple methods to run lint-staged
+if command -v npx >/dev/null 2>&1; then
+    echo "✓ Using npx"
+    npx lint-staged --config ./config/lint-staged.config.json
+elif command -v npm >/dev/null 2>&1; then
+    echo "✓ Using npm"
+    npm exec lint-staged -- --config ./config/lint-staged.config.json
+elif [ -x "/c/Program Files/nodejs/npx.cmd" ]; then
+    echo "✓ Using npx.cmd"
+    "/c/Program Files/nodejs/npx.cmd" lint-staged --config ./config/lint-staged.config.json
+else
+    echo "❌ ERROR: Cannot find npm/npx"
+    echo "   PATH: $PATH"
+    exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"
