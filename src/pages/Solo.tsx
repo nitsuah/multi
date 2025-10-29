@@ -15,6 +15,7 @@ import CollisionSystem from "../components/CollisionSystem";
 import GameManager, { GameState, Player } from "../components/GameManager";
 import GameUI from "../components/GameUI";
 import { KeyDisplay, W, A, S, D, SHIFT } from "../components/utils";
+import { MobileJoystick } from "../components/MobileJoystick";
 import "../styles/App.css";
 
 const RECONNECT_ATTEMPTS = 5;
@@ -121,6 +122,8 @@ interface PlayerCharacterProps {
   clients: Clients;
   gameManager: GameManager | null;
   currentPlayerId: string;
+  joystickMove: { x: number; y: number };
+  joystickCamera: { x: number; y: number };
 }
 
 const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
@@ -130,6 +133,8 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   clients,
   gameManager,
   currentPlayerId,
+  joystickMove,
+  joystickCamera,
 }) => {
   const meshRef = useRef<THREE.Group>(null);
   const velocity = useRef(new THREE.Vector3());
@@ -207,6 +212,21 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       skycam.current = false;
     }
 
+    // Joystick camera rotation
+    if (joystickCamera.x !== 0 || joystickCamera.y !== 0) {
+      const joystickSensitivity = 0.03;
+      cameraRotation.current.horizontal -=
+        joystickCamera.x * joystickSensitivity * delta;
+      cameraRotation.current.vertical +=
+        joystickCamera.y * joystickSensitivity * delta;
+    }
+
+    // Always clamp vertical rotation (from joystick too)
+    cameraRotation.current.vertical = Math.max(
+      -Math.PI / 3,
+      Math.min(Math.PI / 3, cameraRotation.current.vertical)
+    );
+
     // Calculate camera offset based on rotation
     const distance = 5;
     const offsetX =
@@ -226,9 +246,10 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
 
     const hasKeyboardInput =
       keysPressed[W] || keysPressed[S] || keysPressed[A] || keysPressed[D];
+    const hasJoystickInput = joystickMove.x !== 0 || joystickMove.y !== 0;
 
     // WoW-style auto-run: both mouse buttons held = move forward
-    if (bothMouseButtons || hasKeyboardInput) {
+    if (bothMouseButtons || hasKeyboardInput || hasJoystickInput) {
       // Movement relative to camera direction
       const forward = new THREE.Vector3();
       const right = new THREE.Vector3();
@@ -255,6 +276,12 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       if (keysPressed[S]) direction.current.sub(forward);
       if (keysPressed[A]) direction.current.sub(right);
       if (keysPressed[D]) direction.current.add(right);
+
+      // Joystick input (Y is forward/back, X is left/right)
+      if (hasJoystickInput) {
+        direction.current.add(forward.clone().multiplyScalar(-joystickMove.y));
+        direction.current.add(right.clone().multiplyScalar(joystickMove.x));
+      }
 
       // Normalize direction
       if (direction.current.length() > 0) {
@@ -432,6 +459,8 @@ const Solo: React.FC = () => {
   const [localPlayerId] = useState(
     () => `local-${Math.random().toString(36).slice(2, 8)}`
   );
+  const [joystickMove, setJoystickMove] = useState({ x: 0, y: 0 });
+  const [joystickCamera, setJoystickCamera] = useState({ x: 0, y: 0 });
   const reconnectAttempts = useRef(0);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const keyDisplayRef = useRef<KeyDisplay | null>(null);
@@ -581,6 +610,24 @@ const Solo: React.FC = () => {
         position: [0, 0.5, 0],
         rotation: [0, 0, 0],
       });
+
+      // Add inert bot for collision testing
+      const botId = "bot-1";
+      newGameManager.addPlayer({
+        id: botId,
+        name: "Bot",
+        position: [5, 0.5, 5],
+        rotation: [0, 0, 0],
+      });
+
+      // Add bot to clients for collision detection
+      setClients({
+        [botId]: {
+          position: [5, 0.5, 5],
+          rotation: [0, 0, 0],
+        },
+      });
+
       setGamePlayers(new Map(newGameManager.getPlayers()));
     }
   }, [localPlayerId]);
@@ -938,7 +985,23 @@ const Solo: React.FC = () => {
           clients={clients}
           gameManager={currentGameManager}
           currentPlayerId={socketClient?.id || localPlayerId}
+          joystickMove={joystickMove}
+          joystickCamera={joystickCamera}
         />
+
+        {/* Inert Bot - placeholder for future AI opponent */}
+        <group position={[5, 0.5, 5]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.5, 1, 0.5]} />
+            <meshStandardMaterial color="#ff4444" />
+          </mesh>
+          {/* Bot label */}
+          <mesh position={[0, 1.2, 0]}>
+            <sphereGeometry args={[0.1, 8, 8]} />
+            <meshBasicMaterial color="#ffff00" />
+          </mesh>
+        </group>
+
         {Object.keys(clients)
           .filter((clientKey) => socketClient && clientKey !== socketClient.id)
           .map((client) => {
@@ -955,6 +1018,18 @@ const Solo: React.FC = () => {
             );
           })}
       </Canvas>
+
+      {/* Mobile Joysticks - only appear on touch devices */}
+      <MobileJoystick
+        side="left"
+        label="MOVE"
+        onMove={(x, y) => setJoystickMove({ x, y })}
+      />
+      <MobileJoystick
+        side="right"
+        label="CAMERA"
+        onMove={(x, y) => setJoystickCamera({ x, y })}
+      />
     </>
   );
 };
