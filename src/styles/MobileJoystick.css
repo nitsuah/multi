@@ -112,18 +112,44 @@
   }
 }
 
-/* Landscape mode adjustments */
-@media (max-height: 500px) and (orientation: landscape) {
+/* Portrait mode - stack joysticks with more spacing */
+@media (max-width: 767px) and (orientation: portrait) {
   .joystick-container {
-    bottom: 20px;
+    bottom: 30px;
   }
 
   .joystick-container.left {
-    left: 20px;
+    left: 30px;
   }
 
   .joystick-container.right {
-    right: 20px;
+    right: 30px;
+  }
+
+  /* Slightly smaller in portrait to avoid UI overlap */
+  .joystick-base {
+    width: 110px;
+    height: 110px;
+  }
+
+  .joystick-knob {
+    width: 55px;
+    height: 55px;
+  }
+}
+
+/* Landscape mode adjustments - more compact for limited vertical space */
+@media (max-height: 500px) and (orientation: landscape) {
+  .joystick-container {
+    bottom: 15px;
+  }
+
+  .joystick-container.left {
+    left: 15px;
+  }
+
+  .joystick-container.right {
+    right: 15px;
   }
 
   .joystick-base {
@@ -134,5 +160,17 @@
   .joystick-knob {
     width: 45px;
     height: 45px;
+  }
+
+  .joystick-label {
+    font-size: 10px;
+    top: -20px;
+  }
+}
+
+/* Very tall portrait screens - more bottom spacing */
+@media (min-aspect-ratio: 1/2) and (orientation: portrait) {
+  .joystick-container {
+    bottom: 50px;
   }
 }

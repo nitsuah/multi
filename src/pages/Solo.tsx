@@ -16,6 +16,7 @@ import GameManager, { GameState, Player } from "../components/GameManager";
 import GameUI from "../components/GameUI";
 import { KeyDisplay, W, A, S, D, SHIFT } from "../components/utils";
 import { MobileJoystick } from "../components/MobileJoystick";
+import { useOrientation } from "../components/useOrientation";
 import "../styles/App.css";
 
 const RECONNECT_ATTEMPTS = 5;
@@ -461,6 +462,7 @@ const Solo: React.FC = () => {
   );
   const [joystickMove, setJoystickMove] = useState({ x: 0, y: 0 });
   const [joystickCamera, setJoystickCamera] = useState({ x: 0, y: 0 });
+  const orientation = useOrientation();
   const reconnectAttempts = useRef(0);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const keyDisplayRef = useRef<KeyDisplay | null>(null);
@@ -882,7 +884,13 @@ const Solo: React.FC = () => {
   }, [keysPressed, socketClient, isConnected]);
 
   return (
-    <>
+    <div
+      className={
+        orientation === "portrait"
+          ? "mobile-layout-portrait"
+          : "mobile-layout-landscape"
+      }
+    >
       <Tutorial />
       <HelpModal />
       <ThemeToggle />
@@ -921,7 +929,7 @@ const Solo: React.FC = () => {
           opacity: 0.5,
         }}
       >
-        Solo — Offline
+        Solo — Offline {orientation === "portrait" ? "📱" : "🖥️"}
       </div>
       <Canvas
         camera={{ position: [0, 3, -5], near: 0.1, far: 1000 }}
@@ -1030,7 +1038,7 @@ const Solo: React.FC = () => {
         label="CAMERA"
         onMove={(x, y) => setJoystickCamera({ x, y })}
       />
-    </>
+    </div>
   );
 };
 

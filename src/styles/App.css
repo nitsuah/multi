@@ -686,3 +686,98 @@ input:focus {
 .upcoming-features li:last-child {
   border-bottom: none;
 }
+
+/* Mobile Layout Mode - Portrait orientation adjustments */
+.mobile-layout-portrait {
+  /* Ensure UI doesn't overlap with joysticks */
+  display: block;
+}
+
+.mobile-layout-portrait .chat-container {
+  /* Adjust chat position to avoid joystick overlap */
+  max-height: 40vh !important;
+  bottom: 180px !important; /* Space for joysticks */
+}
+
+.mobile-layout-portrait .game-ui {
+  /* Adjust game UI to avoid joystick overlap */
+  top: 60px !important;
+}
+
+/* Mobile Layout Mode - Landscape orientation adjustments */
+.mobile-layout-landscape {
+  /* Optimize for wide but short screen */
+  display: block;
+}
+
+.mobile-layout-landscape .chat-container {
+  max-height: 50vh !important;
+  bottom: 130px !important; /* Tighter spacing for landscape */
+  max-width: 300px !important; /* Narrower to save horizontal space */
+}
+
+.mobile-layout-landscape .game-ui {
+  top: 10px !important;
+  font-size: 14px !important;
+}
+
+/* Orientation-aware adjustments for all mobile screens */
+@media (max-width: 767px) and (orientation: portrait) {
+  /* Portrait: Stack UI vertically, more top-to-bottom */
+  .theme-toggle {
+    top: 10px !important;
+    right: 10px !important;
+  }
+
+  .quality-settings {
+    top: 50px !important;
+    right: 10px !important;
+  }
+
+  .performance-monitor {
+    top: 90px !important;
+    right: 10px !important;
+    font-size: 10px !important;
+  }
+
+  /* Help and tutorial buttons */
+  button[style*="position: fixed"] {
+    font-size: 14px !important;
+    padding: 8px 16px !important;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Landscape: Spread UI horizontally, minimize vertical space */
+  .theme-toggle {
+    top: 5px !important;
+    right: 10px !important;
+    scale: 0.9;
+  }
+
+  .quality-settings {
+    top: 5px !important;
+    right: 60px !important;
+    scale: 0.9;
+  }
+
+  .performance-monitor {
+    top: 5px !important;
+    right: 120px !important;
+    font-size: 9px !important;
+  }
+
+  /* Compact buttons in landscape */
+  button[style*="position: fixed"] {
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+  }
+
+  /* Connection status */
+  div[style*="Solo — Offline"],
+  div[style*="Connection"] {
+    top: 5px !important;
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
+}
