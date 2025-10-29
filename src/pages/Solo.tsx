@@ -69,7 +69,6 @@ try {
 
 const debug = (...args: unknown[]) => {
   if (__isDev) {
-     
     console.log(...args);
   }
 };
@@ -148,7 +147,6 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     if (import.meta && import.meta.env && import.meta.env.DEV) {
-       
       console.log(...args);
     }
   };
@@ -855,8 +853,8 @@ const Solo: React.FC = () => {
         <gridHelper rotation={[0, 0, 0]} />
 
         {/* Environment Obstacles */}
-        {/* Central pillar */}
-        <mesh position={[0, 2, 0]} castShadow receiveShadow>
+        {/* Central pillar - moved to side so it doesn't block spawn */}
+        <mesh position={[8, 2, 0]} castShadow receiveShadow>
           <boxGeometry args={[4, 4, 4]} />
           <meshStandardMaterial color="#666666" />
         </mesh>
