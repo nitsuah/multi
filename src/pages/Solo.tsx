@@ -114,6 +114,7 @@ interface PlayerCharacterProps {
   mouseControls: {
     leftClick: boolean;
     rightClick: boolean;
+    middleClick: boolean;
     mouseX: number;
     mouseY: number;
   };
@@ -159,7 +160,11 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       mouseControls.leftClick && mouseControls.rightClick;
 
     // Handle mouse camera rotation
-    if (mouseControls.leftClick || mouseControls.rightClick) {
+    if (
+      mouseControls.leftClick ||
+      mouseControls.rightClick ||
+      mouseControls.middleClick
+    ) {
       if (isFirstMouse.current) {
         previousMouse.current.x = mouseControls.mouseX;
         previousMouse.current.y = mouseControls.mouseY;
@@ -181,12 +186,13 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
         cameraRotation.current.horizontal -= deltaX * sensitivity;
         cameraRotation.current.vertical += deltaY * sensitivity;
         skycam.current = false;
-      } else if (mouseControls.leftClick) {
-        // Left-click only: Rotate camera WITHOUT rotating player (peek mode)
+      } else if (mouseControls.middleClick) {
+        // Middle-click: Rotate camera WITHOUT rotating player (peek mode)
         skycam.current = true;
         cameraRotation.current.horizontal -= deltaX * sensitivity;
         cameraRotation.current.vertical += deltaY * sensitivity;
       }
+      // Left-click is now free for interactions (no camera control)
 
       // Clamp vertical rotation
       cameraRotation.current.vertical = Math.max(
@@ -405,6 +411,7 @@ const Solo: React.FC = () => {
   const [mouseControls, setMouseControls] = useState({
     leftClick: false,
     rightClick: false,
+    middleClick: false,
     mouseX: 0,
     mouseY: 0,
   });
@@ -614,14 +621,15 @@ const Solo: React.FC = () => {
     };
 
     const handleMouseDown = (e: MouseEvent) => {
-      // Prevent default context menu on right-click
-      if (e.button === 2) {
+      // Prevent default context menu on right-click and middle-click
+      if (e.button === 1 || e.button === 2) {
         e.preventDefault();
       }
 
       setMouseControls((prev) => ({
         ...prev,
         leftClick: e.button === 0 ? true : prev.leftClick,
+        middleClick: e.button === 1 ? true : prev.middleClick,
         rightClick: e.button === 2 ? true : prev.rightClick,
       }));
     };
@@ -630,6 +638,7 @@ const Solo: React.FC = () => {
       setMouseControls((prev) => ({
         ...prev,
         leftClick: e.button === 0 ? false : prev.leftClick,
+        middleClick: e.button === 1 ? false : prev.middleClick,
         rightClick: e.button === 2 ? false : prev.rightClick,
       }));
     };
