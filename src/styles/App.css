@@ -1,13 +1,22 @@
 /* Accessibility: Focus styles for buttons and links */
-button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:focus {
+button:focus,
+.poly-wallet:focus,
+.neutral-wallet:focus,
+.mint-button:focus,
+a:focus {
   outline: 2px solid #ff8c7f;
   outline-offset: 2px;
 }
 
 /* Accessibility: Improve color contrast for text on dark backgrounds */
-.footer-text, .projects-card, .header, .title, .subtitle, .mint-item {
+.footer-text,
+.projects-card,
+.header,
+.title,
+.subtitle,
+.mint-item {
   color: #fff;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* Responsive: Adjust layout and font sizes for mobile devices */
@@ -67,13 +76,14 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   height: 100vh;
   color: white;
   background-color: #000000;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
-  "Droid Sans", "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
 }
 
 .App {
   height: 100vh;
-  background-color:  #000000;
+  background-color: #000000;
   text-align: center;
   overflow: hidden;
 }
@@ -120,13 +130,13 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   color: white;
 }
 
-.logo{
+.logo {
   width: 20px;
   height: 20px;
   margin-right: 10px;
 }
 
-.right{
+.right {
   display: flex;
   background: #181818;
   border-radius: 16px;
@@ -216,7 +226,7 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
 }
 
 .bg-blur::before {
-  content: '';
+  content: "";
   background-image: var(--bg-image);
   background-size: cover;
   height: 100%;
@@ -225,7 +235,6 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   filter: blur(30px);
   z-index: -1;
 }
-
 
 .middle {
   margin: 0;
@@ -252,12 +261,12 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   align-items: center;
   position: absolute;
   color: white;
-  top:20%;
+  top: 20%;
   left: 15%;
   right: 15%;
 }
 
-.projects-container{
+.projects-container {
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
@@ -295,8 +304,8 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   position: left;
   text-align: left;
   pointer-events: none;
-  color:#ffffff;
-  overflow:auto
+  color: #ffffff;
+  overflow: auto;
 }
 
 .poly-wallet {
@@ -309,12 +318,25 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   letter-spacing: 1px;
   font-size: 16px;
   width: auto;
+  min-width: 100px;
   padding: 10px 20px;
   text-align: center;
   cursor: pointer;
   user-select: auto;
   display: flex;
   flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.poly-wallet h3,
+.neutral-wallet h3 {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .neutral-wallet {
@@ -326,12 +348,16 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   border-radius: 20px;
   letter-spacing: 1px;
   font-size: 16px;
-  width: 100px;
+  width: auto;
+  min-width: 100px;
   padding: 10px 20px;
   text-align: center;
   cursor: not-allowed;
   display: flex;
   flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .mint-button {
@@ -346,19 +372,19 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   cursor: pointer;
 }
 
-.mint-button:disabled{
+.mint-button:disabled {
   background: -webkit-linear-gradient(left, #444444, #000000);
   color: rgb(150, 150, 150);
   cursor: not-allowed;
 }
 
-.mint-row{
+.mint-row {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
 }
 
-.spline-container{
+.spline-container {
   display: flex;
   width: 100%;
   height: 100%;
@@ -367,7 +393,7 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   align-items: center;
 }
 
-.edit-button{
+.edit-button {
   border-radius: 50%;
   cursor: pointer;
   margin-left: 3px;
@@ -377,10 +403,9 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   background-color: transparent;
 }
 
-.edit-icon{
+.edit-icon {
   width: 12px;
 }
-
 
 .footer-container {
   display: flex;
@@ -398,13 +423,13 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
 .twitter-logo {
   width: 35px;
   height: 35px;
-  user-select: none; 
+  user-select: none;
 }
 
 .small-logo {
   width: 50px;
   height: 50px;
-  user-select: none; 
+  user-select: none;
 }
 
 .arf-logo {
@@ -428,7 +453,7 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   font-weight: bold;
 }
 
-.form-container{
+.form-container {
   display: flex;
   width: 100%;
   flex-direction: column;
@@ -436,7 +461,7 @@ button:focus, .poly-wallet:focus, .neutral-wallet:focus, .mint-button:focus, a:f
   align-items: center;
 }
 
-input{
+input {
   border: 0;
   border-radius: 12px;
   background-color: black;
@@ -458,7 +483,7 @@ input:focus {
   outline: none;
 }
 
-.zero-row{
+.zero-row {
   position: relative;
   display: flex;
   flex-direction: row;
@@ -467,7 +492,7 @@ input:focus {
   margin-bottom: 10px;
 }
 
-.first-row{
+.first-row {
   position: relative;
   display: flex;
   flex-direction: row;
@@ -476,7 +501,7 @@ input:focus {
   margin-bottom: 10px;
 }
 
-.second-row{
+.second-row {
   position: relative;
   display: flex;
   flex-direction: row;
@@ -486,7 +511,6 @@ input:focus {
   user-select: none;
 }
 
-
 .tld {
   position: absolute;
   font-size: 20px;
@@ -494,7 +518,7 @@ input:focus {
   color: white;
   /* left: -70px; */
   right: 22px;
-  margin: 0;  
+  margin: 0;
   padding: 0;
   margin-bottom: 13px;
 }
@@ -539,16 +563,16 @@ input:focus {
   background-color: lightgreen;
 }
 
-.link{
+.link {
   color: rgb(69, 0, 100);
   text-decoration: none;
 }
 
-.underlined{
+.underlined {
   text-decoration: underline;
 }
 
-.underlined:hover{
+.underlined:hover {
   cursor: pointer;
 }
 
