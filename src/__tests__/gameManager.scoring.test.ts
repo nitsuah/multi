@@ -20,16 +20,17 @@ describe("GameManager scoring", () => {
 
     gm.startTagGame(180);
     const state = gm.getGameState();
-    // Force p1 to be it
-    state.itPlayerId = "p1";
-    gm.getPlayers().get("p1")!.isIt = true;
 
-    // Simulate immediate tag
-    const success = gm.tagPlayer("p1", "p2");
+    // Get whoever was randomly chosen as "it"
+    const itPlayerId = state.itPlayerId!;
+    const notItPlayerId = itPlayerId === "p1" ? "p2" : "p1";
+
+    // Simulate immediate tag from it player to the other player
+    const success = gm.tagPlayer(itPlayerId, notItPlayerId);
     expect(success).toBe(true);
 
-    // Ensure p1 got positive score
-    const score = gm.getGameState().scores["p1"];
+    // Ensure the tagger got positive score
+    const score = gm.getGameState().scores[itPlayerId];
     expect(score).toBeGreaterThanOrEqual(0);
   });
 });
