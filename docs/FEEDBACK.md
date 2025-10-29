@@ -8,4 +8,9 @@ Use `TODO.md` to pick next features to implement but prioritize the feedback bel
 
 ## QA Review
 
-- [ ]
+- [ ] on the home page, make it say "Pay to Play" for multiplayer, but leave the button disabled for now.
+- [ ] on the home page, add a section for "Upcoming Features" and list the top 3 features players are asking for.
+- [ ] on the home page the "market" button text is cut off.
+- [ ] we need to fix the movement. currently the blue character block doesnt move (but doesnt sort of rotate) when using the arrow keys or WASD. it should move in the direction of the key pressed.
+- [ ] the right mouse button is perfect! and when pressing both mouse buttons it does look like it rotates as expected too!
+- [ ] but the left mouse button still does the "peek" - we are going to need the left click for interaction so maybe we should lock the peek function to the middle mouse button instead? that way we can use the mouse left click for interactions on screen without wildly affecting gameplay. i think this will be closer to WoW.

@@ -269,7 +269,7 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
         );
 
         // Check for player-to-player collisions and tagging
-        const myId = socketClient?.id;
+        const myId = socketClient?.id || currentPlayerId;
         if (myId && gameManager) {
           const currentPlayer = gameManager.getPlayers().get(myId);
           const gameState = gameManager.getGameState();
@@ -307,10 +307,12 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
 
                 debug(`Attempting to tag player ${clientId}`);
                 if (gameManager.tagPlayer(myId, clientId)) {
-                  socketClient.emit("player-tagged", {
-                    taggerId: myId,
-                    taggedId: clientId,
-                  });
+                  if (socketClient) {
+                    socketClient.emit("player-tagged", {
+                      taggerId: myId,
+                      taggedId: clientId,
+                    });
+                  }
                   lastTagCheck.current = now;
                 }
               }
