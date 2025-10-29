@@ -1,37 +1,31 @@
 #!/usr/bin/env sh
-# Disable exit on error temporarily to test npm availability
+set -e
+
 echo "🔍 Running pre-commit hook..."
 
-# Try using npx directly (comes with npm)
+# Source nvm if it exists (common on Windows)
+if [ -f "$HOME/.nvm/nvm.sh" ]; then
+    . "$HOME/.nvm/nvm.sh"
+fi
+
+# Add common Windows Node.js paths
+export PATH="$PATH:/c/Program Files/nodejs:/c/Program Files (x86)/nodejs"
+export PATH="$PATH:$APPDATA/npm:$HOME/AppData/Roaming/npm"
+
+# Try multiple methods to run lint-staged
 if command -v npx >/dev/null 2>&1; then
-    echo "✓ Using npx from PATH"
+    echo "✓ Using npx"
     npx lint-staged --config ./config/lint-staged.config.json
-    exit $?
-fi
-
-# Try npm from PATH
-if command -v npm >/dev/null 2>&1; then
-    echo "✓ Using npm from PATH"
+elif command -v npm >/dev/null 2>&1; then
+    echo "✓ Using npm"
     npm exec lint-staged -- --config ./config/lint-staged.config.json
-    exit $?
-fi
-
-# Windows: Try npm.cmd in Program Files
-if [ -x "/c/Program Files/nodejs/npm.cmd" ]; then
-    echo "✓ Using npm.cmd from Program Files"
-    "/c/Program Files/nodejs/npm.cmd" exec lint-staged -- --config ./config/lint-staged.config.json
-    exit $?
-fi
-
-# Windows: Try direct path to npx
-if [ -x "/c/Program Files/nodejs/npx.cmd" ]; then
-    echo "✓ Using npx.cmd from Program Files"
+elif [ -x "/c/Program Files/nodejs/npx.cmd" ]; then
+    echo "✓ Using npx.cmd"
     "/c/Program Files/nodejs/npx.cmd" lint-staged --config ./config/lint-staged.config.json
-    exit $?
+else
+    echo "❌ ERROR: Cannot find npm/npx"
+    echo "   PATH: $PATH"
+    exit 1
 fi
 
-# Last resort: skip hook with warning
-echo "⚠️  WARNING: Could not find npm/npx. Skipping pre-commit checks."
-echo "   Please ensure Node.js is installed and in your PATH."
-echo "   You can run 'npm run precommit' manually to lint your changes."
-exit 0
+echo "✅ Pre-commit checks passed!"
