@@ -73,6 +73,7 @@ const Home = () => {
             <Spline scene={SPLINE_SCENE} />
           </Suspense> */}
           <div
+            className="moon-background"
             style={{
               position: "fixed",
               top: "50%",

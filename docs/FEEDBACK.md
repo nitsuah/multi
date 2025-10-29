@@ -6,6 +6,6 @@ Short actionable checklist
 
 Use `TODO.md` to pick next features to implement but prioritize the feedback below. But if too complex move to the next `PHASE#.md` like `PHASE7.md`.
 
-## QA Review - Phase 6 - round 2
+## QA Review - Phase 7 - round 1
 
 - [ ]
