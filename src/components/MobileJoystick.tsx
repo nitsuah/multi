@@ -57,24 +57,25 @@ export const MobileJoystick: React.FC<JoystickProps> = ({
     onMove(0, 0);
   }, [onMove]);
 
-  const handleTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      e.preventDefault();
-      if (!baseRef.current) return;
+  useEffect(() => {
+    const base = baseRef.current;
+    if (!base) return;
 
+    // Use native events with passive: false to allow preventDefault
+    // eslint-disable-next-line no-undef
+    const touchStartHandler = (e: TouchEvent) => {
+      e.preventDefault();
       const touch = e.touches[0];
       if (touch) {
         touchIdRef.current = touch.identifier;
-        baseRef.current.classList.add("active");
+        base.classList.add("active");
         activeRef.current = true;
         handleMove(touch.clientX, touch.clientY);
       }
-    },
-    [handleMove]
-  );
+    };
 
-  const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
+    // eslint-disable-next-line no-undef
+    const touchMoveHandler = (e: TouchEvent) => {
       e.preventDefault();
       if (!activeRef.current) return;
 
@@ -84,12 +85,10 @@ export const MobileJoystick: React.FC<JoystickProps> = ({
       if (touch) {
         handleMove(touch.clientX, touch.clientY);
       }
-    },
-    [handleMove]
-  );
+    };
 
-  const handleTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
+    // eslint-disable-next-line no-undef
+    const touchEndHandler = (e: TouchEvent) => {
       e.preventDefault();
       const touchEnded = !Array.from(e.touches).some(
         (t) => t.identifier === touchIdRef.current
@@ -97,30 +96,29 @@ export const MobileJoystick: React.FC<JoystickProps> = ({
       if (touchEnded) {
         handleEnd();
       }
-    },
-    [handleEnd]
-  );
+    };
 
-  useEffect(() => {
+    base.addEventListener("touchstart", touchStartHandler, { passive: false });
+    base.addEventListener("touchmove", touchMoveHandler, { passive: false });
+    base.addEventListener("touchend", touchEndHandler, { passive: false });
+    base.addEventListener("touchcancel", touchEndHandler, { passive: false });
+
     // Cleanup on unmount
     return () => {
+      base.removeEventListener("touchstart", touchStartHandler);
+      base.removeEventListener("touchmove", touchMoveHandler);
+      base.removeEventListener("touchend", touchEndHandler);
+      base.removeEventListener("touchcancel", touchEndHandler);
       if (activeRef.current) {
         handleEnd();
       }
     };
-  }, [handleEnd]);
+  }, [handleEnd, handleMove]);
 
   return (
     <div className={`joystick-container ${side}`}>
       <div className="joystick-label">{label}</div>
-      <div
-        ref={baseRef}
-        className="joystick-base"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
-      >
+      <div ref={baseRef} className="joystick-base">
         <div ref={knobRef} className="joystick-knob" />
       </div>
     </div>

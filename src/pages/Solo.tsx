@@ -22,8 +22,7 @@ import { getSoundManager } from "../components/SoundManager";
 import PauseMenu from "../components/PauseMenu";
 import { useNavigate } from "react-router-dom";
 
-const RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 1000; // Start with 1 second
+// Solo mode: no reconnection needed
 const MAX_CHAT_MESSAGES = 50;
 
 interface ChatMessage {
@@ -154,6 +153,7 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   const isFirstMouse = useRef(true);
   const collisionSystem = useRef(new CollisionSystem());
   const lastTagCheck = useRef(0);
+  const frameCounter = useRef(0);
 
   // gated debug logger - only logs in dev
   const debug = (...args: unknown[]) => {
@@ -166,7 +166,15 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   };
 
   useFrame((state, delta) => {
-    if (!meshRef.current || isPaused) return; // Don't update if paused
+    frameCounter.current++;
+
+    if (!meshRef.current || isPaused) {
+      // Debug: Log if we're not processing frames (every 100 frames)
+      if (frameCounter.current % 100 === 0) {
+        debug("Frame skipped:", { hasMesh: !!meshRef.current, isPaused });
+      }
+      return;
+    }
 
     // WoW-style camera controls
     const bothMouseButtons =
@@ -256,9 +264,8 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       keysPressed[W] || keysPressed[S] || keysPressed[A] || keysPressed[D];
     const hasJoystickInput = joystickMove.x !== 0 || joystickMove.y !== 0;
 
-    // Debug: Log keyboard input detection
-    if (hasKeyboardInput && Math.random() < 0.01) {
-      // Only log 1% of frames to avoid spam
+    // Debug: Log keyboard input detection (every 100 frames)
+    if (hasKeyboardInput && frameCounter.current % 100 === 0) {
       debug("Keys pressed:", {
         w: keysPressed[W],
         a: keysPressed[A],
@@ -501,13 +508,23 @@ const Solo: React.FC = () => {
   const [joystickMove, setJoystickMove] = useState({ x: 0, y: 0 });
   const [joystickCamera, setJoystickCamera] = useState({ x: 0, y: 0 });
   const orientation = useOrientation();
-  const reconnectAttempts = useRef(0);
-  const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+  // Solo mode: no reconnection refs needed
   const keyDisplayRef = useRef<KeyDisplay | null>(null);
   const lastEmitTime = useRef(0);
   const gameManager = useRef<GameManager | null>(null);
   const soundManager = useRef(getSoundManager());
   const lastWalkSoundTime = useRef(0);
+  const isPausedRef = useRef(isPaused);
+  const chatVisibleRef = useRef(chatVisible);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    chatVisibleRef.current = chatVisible;
+  }, [chatVisible]);
 
   // Quality presets
   const getQualitySettings = (level: QualityLevel) => {
@@ -541,40 +558,21 @@ const Solo: React.FC = () => {
 
   const qualitySettings = getQualitySettings(quality);
 
-  const attemptReconnect = useCallback(() => {
-    if (reconnectAttempts.current < RECONNECT_ATTEMPTS) {
-      const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current);
-      debug(
-        `Reconnecting in ${delay}ms (attempt ${
-          reconnectAttempts.current + 1
-        }/${RECONNECT_ATTEMPTS})`
-      );
-
-      reconnectTimeout.current = setTimeout(() => {
-        reconnectAttempts.current += 1;
-        if (socketClient) {
-          socketClient.connect();
-        }
-      }, delay);
-    } else {
-      console.error("Max reconnection attempts reached");
-    }
-  }, [socketClient]);
-
+  // Solo mode: no reconnection logic needed
   const connectSocket = useCallback(() => {
     const serverUrl =
       import.meta.env.VITE_SOCKET_SERVER_URL || window.location.origin;
     const socket = io(serverUrl, {
       transports: ["websocket"],
-      reconnection: true,
-      reconnectionAttempts: RECONNECT_ATTEMPTS,
-      reconnectionDelay: RECONNECT_DELAY,
+      reconnection: false, // Disable auto-reconnection for solo mode
+      reconnectionAttempts: 0,
+      reconnectionDelay: 0,
+      autoConnect: false, // Don't connect automatically
     });
 
     socket.on("connect", () => {
       debug("Socket connected:", socket.id);
       setIsConnected(true);
-      reconnectAttempts.current = 0;
 
       // Initialize game manager
       if (!gameManager.current) {
@@ -607,31 +605,48 @@ const Solo: React.FC = () => {
         gameManager.current.removePlayer(socket.id);
       }
 
-      // Attempt manual reconnection with exponential backoff
-      if (reason === "io server disconnect" || reason === "transport close") {
-        attemptReconnect();
-      }
+      // Solo mode: no reconnection needed
     });
 
     socket.on("connect_error", (error) => {
-      // Always log connection errors regardless of DEV flag
-      console.error("Socket connection error:", error);
-      attemptReconnect();
+      // Solo mode: connection errors are expected, just log to debug
+      debug("Socket connection error (expected in solo mode):", error);
     });
 
     setSocketClient(socket);
     return socket;
-  }, [attemptReconnect]);
+  }, []); // No dependencies needed - solo mode doesn't reconnect
 
   useEffect(() => {
     const socket = connectSocket();
     return () => {
-      if (reconnectTimeout.current) {
-        clearTimeout(reconnectTimeout.current);
-      }
       socket.disconnect();
     };
   }, [connectSocket]);
+
+  // Mobile viewport handling - hide browser bars
+  useEffect(() => {
+    const hideBrowserUI = () => {
+      // Scroll to hide address bar on mobile
+      window.scrollTo(0, 1);
+
+      // Update viewport height for mobile browsers
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+
+    // Hide on load
+    hideBrowserUI();
+
+    // Re-hide on orientation change or resize
+    window.addEventListener("resize", hideBrowserUI);
+    window.addEventListener("orientationchange", hideBrowserUI);
+
+    return () => {
+      window.removeEventListener("resize", hideBrowserUI);
+      window.removeEventListener("orientationchange", hideBrowserUI);
+    };
+  }, []);
 
   // Initialize GameManager immediately for solo mode (even without socket)
   useEffect(() => {
@@ -704,13 +719,17 @@ const Solo: React.FC = () => {
       }
 
       // Handle chat toggle
-      if (key === "c" && !chatVisible && !isPaused) {
+      if (key === "c" && !chatVisibleRef.current && !isPausedRef.current) {
         setChatVisible(true);
         return;
       }
 
       // Only process movement keys if chat is not visible and game is not paused
-      if (!chatVisible && !isPaused && [W, A, S, D, SHIFT].includes(key)) {
+      if (
+        !chatVisibleRef.current &&
+        !isPausedRef.current &&
+        [W, A, S, D, SHIFT].includes(key)
+      ) {
         e.preventDefault(); // Prevent default browser behavior
         setKeysPressed((prev) => ({ ...prev, [key]: true }));
         keyDisplayRef.current?.down(key);
@@ -719,9 +738,9 @@ const Solo: React.FC = () => {
           "Key not processed:",
           key,
           "chatVisible:",
-          chatVisible,
+          chatVisibleRef.current,
           "isPaused:",
-          isPaused,
+          isPausedRef.current,
           "isMovementKey:",
           [W, A, S, D, SHIFT].includes(key)
         );
@@ -733,7 +752,11 @@ const Solo: React.FC = () => {
       debug("Key up:", key);
 
       // Only process movement keys if chat is not visible and game is not paused
-      if (!chatVisible && !isPaused && [W, A, S, D, SHIFT].includes(key)) {
+      if (
+        !chatVisibleRef.current &&
+        !isPausedRef.current &&
+        [W, A, S, D, SHIFT].includes(key)
+      ) {
         e.preventDefault();
         setKeysPressed((prev) => ({ ...prev, [key]: false }));
         keyDisplayRef.current?.up(key);
@@ -800,7 +823,7 @@ const Solo: React.FC = () => {
         });
       }
     };
-  }, [chatVisible, isPaused]);
+  }, []); // No dependencies - handlers use refs for current values
 
   useEffect(() => {
     if (!socketClient) return;
@@ -861,15 +884,58 @@ const Solo: React.FC = () => {
     };
   }, [socketClient]);
 
+  // Client-side profanity filter for solo mode
+  const filterProfanity = (text: string): string => {
+    const badWords = [
+      "fuck",
+      "shit",
+      "damn",
+      "bitch",
+      "asshole",
+      "bastard",
+      "crap",
+      "piss",
+      "dick",
+      "cock",
+      "pussy",
+      "fag",
+      "faggot",
+      "nigger",
+      "nigga",
+      "retard",
+      "whore",
+      "slut",
+      "cunt",
+      "motherfucker",
+      "fucker",
+      "dipshit",
+      "dumbass",
+      "jackass",
+    ];
+
+    let filtered = text;
+    badWords.forEach((word) => {
+      const regex = new RegExp(
+        word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        "gi"
+      );
+      filtered = filtered.replace(regex, "*".repeat(word.length));
+    });
+    return filtered;
+  };
+
   const handleSendMessage = useCallback(
     (message: string) => {
+      // Apply profanity filter
+      const filteredMessage = filterProfanity(message);
+
       const chatMessage: ChatMessage = {
         id: Date.now().toString(),
         playerId: socketClient?.id || localPlayerId,
         playerName: socketClient?.id
           ? `Player ${socketClient.id.slice(-4)}`
           : "Solo Player",
-        message,
+        message: filteredMessage,
         timestamp: Date.now(),
       };
 

@@ -74,11 +74,11 @@ a:focus {
   }
   .App {
     height: auto;
-    min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
   }
   /* Scale down the moon emoji on mobile */
-  .App > .container > div[style*="fontSize"] {
+  .moon-background {
     font-size: 80px !important;
   }
   .upcoming-features {
@@ -99,7 +99,7 @@ a:focus {
     padding: 6px 8px;
   }
   input {
-    width: 90vw;
+    width: 90dvw;
     font-size: 14px;
     padding: 8px 10px;
   }
@@ -113,8 +113,6 @@ a:focus {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
   width: 100dvw; /* Dynamic viewport width */
   height: 100dvh; /* Dynamic viewport height for mobile */
   color: white;
@@ -301,14 +299,14 @@ a:focus {
   margin: 0;
   font-weight: bold;
   flex-direction: row;
-  position: fixed;
+  position: absolute;
   justify-content: center;
   align-items: center;
-  position: absolute;
   color: white;
-  top: 20%;
-  left: 15%;
-  right: 15%;
+  top: 15%;
+  left: 10%;
+  right: 10%;
+  padding: 2rem 0;
 }
 
 .projects-container {
@@ -317,7 +315,9 @@ a:focus {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  margin-top: 10%;
+  margin-top: 5%;
+  gap: 1.5rem;
+  padding: 1rem;
 }
 
 .projects-card {
@@ -458,11 +458,10 @@ a:focus {
   align-items: center;
   position: absolute;
   bottom: 0;
-  bottom: 0; /* Removed duplicate declaration */
   width: 100%;
-  bottom: 0;
   left: 0;
-  padding-bottom: 20px;
+  padding: 2rem 0;
+  margin-top: 3rem;
 }
 
 .twitter-logo {
@@ -699,7 +698,7 @@ input:focus {
 
 .mobile-layout-portrait .chat-container {
   /* Adjust chat position to avoid joystick overlap */
-  max-height: 40vh !important;
+  max-height: 40dvh !important;
   bottom: 180px !important; /* Space for joysticks */
 }
 
@@ -715,7 +714,7 @@ input:focus {
 }
 
 .mobile-layout-landscape .chat-container {
-  max-height: 50vh !important;
+  max-height: 50dvh !important;
   bottom: 130px !important; /* Tighter spacing for landscape */
   max-width: 300px !important; /* Narrower to save horizontal space */
 }
