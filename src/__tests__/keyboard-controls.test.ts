@@ -1,5 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { KeyDisplay, W, A, S, D, SHIFT, DIRECTIONS } from "../components/utils";
+import {
+  KeyDisplay,
+  W,
+  A,
+  S,
+  D,
+  Q,
+  E,
+  SHIFT,
+  SPACE,
+  DIRECTIONS,
+} from "../components/utils";
 
 /**
  * Tests for keyboard controls and KeyDisplay component
@@ -24,7 +35,9 @@ describe("Keyboard Controls", () => {
     document.querySelectorAll('[style*="position: absolute"]').forEach((el) => {
       if (
         el.textContent &&
-        ["W", "A", "S", "D", "SHIFT"].includes(el.textContent as string)
+        ["W", "A", "S", "D", "Q", "E", "SHIFT", "SPACE"].includes(
+          el.textContent as string
+        )
       ) {
         el.remove();
       }
@@ -41,8 +54,8 @@ describe("Keyboard Controls", () => {
     });
 
     it("should include all direction keys in DIRECTIONS array", () => {
-      expect(DIRECTIONS).toEqual(["w", "a", "s", "d"]);
-      expect(DIRECTIONS).toHaveLength(4);
+      expect(DIRECTIONS).toEqual(["w", "a", "s", "d", "q", "e"]);
+      expect(DIRECTIONS).toHaveLength(6);
     });
   });
 
@@ -50,12 +63,15 @@ describe("Keyboard Controls", () => {
     it("should create display elements for all keys", () => {
       keyDisplay = new KeyDisplay();
 
-      expect(keyDisplay.map.size).toBe(5);
+      expect(keyDisplay.map.size).toBe(8); // W,A,S,D,Q,E,SHIFT,SPACE
       expect(keyDisplay.map.has(W)).toBe(true);
       expect(keyDisplay.map.has(A)).toBe(true);
       expect(keyDisplay.map.has(S)).toBe(true);
       expect(keyDisplay.map.has(D)).toBe(true);
+      expect(keyDisplay.map.has(Q)).toBe(true);
+      expect(keyDisplay.map.has(E)).toBe(true);
       expect(keyDisplay.map.has(SHIFT)).toBe(true);
+      expect(keyDisplay.map.has(SPACE)).toBe(true);
     });
 
     it("should set initial color to purple", () => {

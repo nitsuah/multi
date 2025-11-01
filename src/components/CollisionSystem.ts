@@ -46,13 +46,7 @@ export class CollisionSystem {
       )
     );
 
-    // Add some obstacles in the world
-    // Central pillar
-    this.boundaries.push(
-      new THREE.Box3(new THREE.Vector3(-2, 0, -2), new THREE.Vector3(2, 4, 2))
-    );
-
-    // Corner obstacles
+    // Add corner obstacles and moon rocks to match visible geometry
     this.boundaries.push(
       new THREE.Box3(new THREE.Vector3(15, 0, 15), new THREE.Vector3(20, 3, 20))
     );
@@ -75,6 +69,50 @@ export class CollisionSystem {
       new THREE.Box3(
         new THREE.Vector3(-20, 0, 15),
         new THREE.Vector3(-15, 3, 20)
+      )
+    );
+
+    // Moon rocks - spherical obstacles (approximated as boxes)
+    // Rock at [5, 0.8, 5] - radius 1.5
+    this.boundaries.push(
+      new THREE.Box3(
+        new THREE.Vector3(3.5, 0, 3.5),
+        new THREE.Vector3(6.5, 2, 6.5)
+      )
+    );
+    // Rock at [-8, 0.6, 10] - radius 1.2
+    this.boundaries.push(
+      new THREE.Box3(
+        new THREE.Vector3(-9.2, 0, 8.8),
+        new THREE.Vector3(-6.8, 1.8, 11.2)
+      )
+    );
+    // Rock at [12, 0.5, -5] - radius 1.0
+    this.boundaries.push(
+      new THREE.Box3(
+        new THREE.Vector3(11, 0, -6),
+        new THREE.Vector3(13, 1.5, -4)
+      )
+    );
+    // Rock at [-15, 0.9, -8] - radius 1.6
+    this.boundaries.push(
+      new THREE.Box3(
+        new THREE.Vector3(-16.6, 0, -9.6),
+        new THREE.Vector3(-13.4, 2.2, -6.4)
+      )
+    );
+    // Rock at [3, 0.7, -12] - radius 1.3
+    this.boundaries.push(
+      new THREE.Box3(
+        new THREE.Vector3(1.7, 0, -13.3),
+        new THREE.Vector3(4.3, 2, -10.7)
+      )
+    );
+    // Rock at [-3, 0.4, 15] - radius 0.8
+    this.boundaries.push(
+      new THREE.Box3(
+        new THREE.Vector3(-3.8, 0, 14.2),
+        new THREE.Vector3(-2.2, 1.2, 15.8)
       )
     );
   }

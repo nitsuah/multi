@@ -1,11 +1,22 @@
 # DARKMOON FEEDBACK
 
-Completed items should be removed from this file. Below are the active tasks we still need to track and prioritize for play testing.
+Active QA feedback and issues. Completed items are removed.
 
-Short actionable checklist
+## Pending QA Issues
 
-Use `TODO.md` to pick next features to implement but prioritize the feedback below. But if too complex move to the next `PHASE#.md` like `PHASE7.md`.
+### Mobile Joystick Touch (HIGH PRIORITY)
 
-## QA Review - Phase 6 - round 2
+Right joystick appears on a grey bar at top-right instead of lower-right. Left joystick doesn't respond to touch. Two-finger touch should work like right-click but doesn't. Single touch (not on joystick) should do nothing. Investigate touch event handling and joystick positioning/responsiveness.
 
-- [ ]
+**Note**: May need input toggle for mobile controls or investigate proven React joystick libraries.
+
+### Mobile Browser Address Bar (MEDIUM PRIORITY)
+
+Current `dvh` solution doesn't work on mobile Safari or Android Chrome. Address bar still visible on load and after device rotation. Need alternative approach (possibly viewport-fit=cover meta tag or iOS-specific handling).
+
+## Known Working Features
+
+- ✅ WASD movement (desktop)
+- ✅ Chat profanity filter
+- ✅ Code quality
+- ✅ WebSocket warnings eliminated in solo mode

@@ -34,54 +34,60 @@ const GameUI: React.FC<GameUIProps> = ({
       <div
         style={{
           position: "fixed",
-          top: "60px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          padding: "12px 20px",
-          backgroundColor: "rgba(0, 0, 0, 0.8)",
-          border: "2px solid rgba(255, 255, 255, 0.3)",
-          borderRadius: "8px",
+          top: "10px",
+          right: "60px",
+          padding: "8px 12px",
+          backgroundColor: "rgba(0, 0, 0, 0.85)",
+          border: "1px solid rgba(255, 255, 255, 0.3)",
+          borderRadius: "6px",
           color: "white",
           fontFamily: "monospace",
-          fontSize: "14px",
+          fontSize: "12px",
           zIndex: 1000,
-          minWidth: "300px",
-          textAlign: "center",
+          minWidth: "180px",
+          textAlign: "left",
         }}
       >
         <div
-          style={{ marginBottom: "8px", fontSize: "16px", fontWeight: "bold" }}
+          style={{ marginBottom: "6px", fontSize: "13px", fontWeight: "bold" }}
         >
           {gameState.mode.toUpperCase()} GAME
         </div>
 
-        <div style={{ marginBottom: "8px" }}>
-          Time: {formatTime(gameState.timeRemaining)}
+        <div style={{ marginBottom: "6px", fontSize: "11px" }}>
+          ⏱️ {formatTime(gameState.timeRemaining)}
         </div>
 
         {gameState.mode === "tag" && (
           <>
             <div
               style={{
-                marginBottom: "8px",
-                padding: "6px 12px",
+                marginBottom: "6px",
+                padding: "4px 8px",
                 backgroundColor: currentPlayer?.isIt
                   ? "rgba(255, 100, 100, 0.3)"
                   : "rgba(100, 255, 100, 0.3)",
-                borderRadius: "4px",
+                borderRadius: "3px",
                 border: currentPlayer?.isIt
                   ? "1px solid #ff6464"
                   : "1px solid #64ff64",
+                fontSize: "11px",
               }}
             >
               {currentPlayer?.isIt
-                ? "YOU ARE IT!"
+                ? "🏃 YOU ARE IT!"
                 : `${itPlayer?.name || "Someone"} is IT`}
             </div>
 
             {currentPlayer?.isIt && (
-              <div style={{ fontSize: "12px", color: "#ffff64" }}>
-                Tag someone to pass it on!
+              <div
+                style={{
+                  fontSize: "10px",
+                  color: "#ffff64",
+                  marginBottom: "4px",
+                }}
+              >
+                Tag someone!
               </div>
             )}
           </>
@@ -90,14 +96,15 @@ const GameUI: React.FC<GameUIProps> = ({
         <button
           onClick={onEndGame}
           style={{
-            marginTop: "8px",
-            padding: "4px 8px",
+            marginTop: "4px",
+            padding: "3px 6px",
             backgroundColor: "rgba(255, 100, 100, 0.8)",
             border: "1px solid #ff6464",
-            borderRadius: "4px",
+            borderRadius: "3px",
             color: "white",
             cursor: "pointer",
-            fontSize: "12px",
+            fontSize: "10px",
+            width: "100%",
           }}
         >
           End Game
@@ -111,55 +118,56 @@ const GameUI: React.FC<GameUIProps> = ({
     <div
       style={{
         position: "fixed",
-        top: "60px",
-        right: "20px",
-        padding: "16px",
-        backgroundColor: "rgba(0, 0, 0, 0.8)",
-        border: "1px solid rgba(255, 255, 255, 0.2)",
-        borderRadius: "8px",
+        top: "10px",
+        right: "60px",
+        padding: "10px 12px",
+        backgroundColor: "rgba(0, 0, 0, 0.85)",
+        border: "1px solid rgba(255, 255, 255, 0.25)",
+        borderRadius: "6px",
         color: "white",
         fontFamily: "monospace",
-        fontSize: "12px",
+        fontSize: "11px",
         zIndex: 1000,
-        minWidth: "200px",
+        minWidth: "160px",
       }}
     >
       <div
-        style={{ marginBottom: "12px", fontSize: "14px", fontWeight: "bold" }}
+        style={{ marginBottom: "8px", fontSize: "12px", fontWeight: "bold" }}
       >
-        Game Modes
+        🎮 Game Modes
       </div>
 
-      <div style={{ marginBottom: "8px", color: "#aaa" }}>
+      <div style={{ marginBottom: "6px", color: "#aaa", fontSize: "10px" }}>
         Players: {players.size}
       </div>
 
       {players.size >= 2 || players.size === 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <button
             onClick={() => onStartGame(players.size === 0 ? "solo" : "tag")}
             style={{
-              padding: "8px 16px",
+              padding: "6px 10px",
               backgroundColor: "rgba(74, 144, 226, 0.8)",
               border: "1px solid #4a90e2",
-              borderRadius: "4px",
+              borderRadius: "3px",
               color: "white",
               cursor: "pointer",
-              fontSize: "12px",
+              fontSize: "11px",
+              width: "100%",
             }}
           >
-            Start Tag Game {players.size === 0 ? "(Solo Practice)" : ""}
+            Start Tag {players.size === 0 ? "(Practice)" : ""}
           </button>
 
-          <div style={{ fontSize: "10px", color: "#888", textAlign: "center" }}>
+          <div style={{ fontSize: "9px", color: "#888", textAlign: "center" }}>
             {players.size === 0
-              ? "Practice mode • No opponents"
-              : "3 minute rounds • Tag to pass"}
+              ? "Practice • No opponents"
+              : "3 min • Tag to pass"}
           </div>
         </div>
       ) : (
-        <div style={{ color: "#888", textAlign: "center" }}>
-          Need at least 2 players to start a game
+        <div style={{ color: "#888", textAlign: "center", fontSize: "10px" }}>
+          Need 2+ players
         </div>
       )}
     </div>

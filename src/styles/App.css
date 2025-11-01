@@ -1,3 +1,19 @@
+/* Dynamic Viewport Height for Mobile Browser Address Bar */
+:root {
+  /* Fallback for browsers that don't support dvh */
+  --app-height: 100vh;
+
+  /* Use dynamic viewport height if available (accounts for address bar) */
+  --app-height: 100dvh;
+}
+
+/* For older browsers, use JavaScript fallback */
+@supports not (height: 100dvh) {
+  :root {
+    --app-height: var(--vh, 1vh) * 100;
+  }
+}
+
 /* Accessibility: Focus styles for buttons and links */
 button:focus,
 .poly-wallet:focus,
@@ -25,20 +41,38 @@ a:focus {
     padding: 0 0.5rem;
   }
   .header {
-    font-size: 20px;
-    padding: 0.5rem 0;
-    position: static;
+    font-size: 24px;
+    padding: 1rem 0;
+    position: relative;
+    margin-top: 10px;
   }
   .projects-container {
-    margin-top: 2rem;
+    margin-top: 1rem;
   }
   .projects-card {
     width: 95%;
     font-size: 14px;
-    padding: 0.5rem;
-    margin: 0.5rem 0;
+    padding: 0.75rem;
+    margin: 0.75rem 0;
     flex-direction: column;
     height: auto;
+    min-height: 80px;
+  }
+  .projects-card h4,
+  .projects-card p {
+    font-size: 13px;
+    margin: 0.5rem 0;
+  }
+  .poly-wallet,
+  .neutral-wallet {
+    min-height: 48px; /* Touch-friendly size */
+    width: 100%;
+    font-size: 16px;
+    padding: 12px 20px;
+  }
+  .poly-wallet h3,
+  .neutral-wallet h3 {
+    font-size: 16px;
   }
   .middle-row {
     position: static;
@@ -47,14 +81,33 @@ a:focus {
     top: 0;
     margin: 0;
     width: 100%;
+    padding-top: 60px; /* Space for header */
   }
   .footer-container {
     position: static;
-    padding-bottom: 10px;
+    padding-bottom: 20px;
+    margin-top: 2rem;
   }
   .App {
     height: auto;
-    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  /* Scale down the moon emoji on mobile */
+  .moon-background {
+    font-size: 80px !important;
+  }
+  .upcoming-features {
+    width: 90%;
+    padding: 15px 20px;
+    margin: 20px auto;
+  }
+  .upcoming-features h3 {
+    font-size: 20px;
+  }
+  .upcoming-features li {
+    font-size: 14px;
+    padding: 10px 0;
   }
   .mint-item {
     min-width: 100px;
@@ -62,18 +115,19 @@ a:focus {
     padding: 6px 8px;
   }
   input {
-    width: 90vw;
+    width: 90dvw;
     font-size: 14px;
     padding: 8px 10px;
   }
 }
+
 #root {
   overflow: hidden;
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100dvw; /* Dynamic viewport width */
+  height: 100dvh; /* Dynamic viewport height for mobile */
   color: white;
   background-color: #000000;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
@@ -82,14 +136,17 @@ a:focus {
 }
 
 .App {
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background-color: #000000;
   text-align: center;
   overflow: hidden;
+  position: relative;
 }
 
 .container {
-  height: 100%;
+  height: var(--app-height);
+  min-height: var(--app-height);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -256,14 +313,14 @@ a:focus {
   margin: 0;
   font-weight: bold;
   flex-direction: row;
-  position: fixed;
+  position: absolute;
   justify-content: center;
   align-items: center;
-  position: absolute;
   color: white;
-  top: 20%;
-  left: 15%;
-  right: 15%;
+  top: 15%;
+  left: 10%;
+  right: 10%;
+  padding: 2rem 0;
 }
 
 .projects-container {
@@ -272,7 +329,9 @@ a:focus {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  margin-top: 10%;
+  margin-top: 5%;
+  gap: 1.5rem;
+  padding: 1rem;
 }
 
 .projects-card {
@@ -411,13 +470,9 @@ a:focus {
   display: flex;
   justify-content: center;
   align-items: center;
-  position: absolute;
-  bottom: 0;
-  bottom: 0; /* Removed duplicate declaration */
   width: 100%;
-  bottom: 0;
-  left: 0;
-  padding-bottom: 20px;
+  padding: 2rem 0;
+  margin-top: 3rem;
 }
 
 .twitter-logo {
@@ -611,6 +666,41 @@ input:focus {
   }
 }
 
+/* Victory celebration animations */
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes popIn {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes confettiBurst {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) rotate(720deg);
+    opacity: 0;
+  }
+}
+
 /* Upcoming Features Section */
 .upcoming-features {
   background: rgba(0, 0, 0, 0.5);
@@ -644,4 +734,99 @@ input:focus {
 
 .upcoming-features li:last-child {
   border-bottom: none;
+}
+
+/* Mobile Layout Mode - Portrait orientation adjustments */
+.mobile-layout-portrait {
+  /* Ensure UI doesn't overlap with joysticks */
+  display: block;
+}
+
+.mobile-layout-portrait .chat-container {
+  /* Adjust chat position to avoid joystick overlap */
+  max-height: 40dvh !important;
+  bottom: 180px !important; /* Space for joysticks */
+}
+
+.mobile-layout-portrait .game-ui {
+  /* Adjust game UI to avoid joystick overlap */
+  top: 60px !important;
+}
+
+/* Mobile Layout Mode - Landscape orientation adjustments */
+.mobile-layout-landscape {
+  /* Optimize for wide but short screen */
+  display: block;
+}
+
+.mobile-layout-landscape .chat-container {
+  max-height: 50dvh !important;
+  bottom: 130px !important; /* Tighter spacing for landscape */
+  max-width: 300px !important; /* Narrower to save horizontal space */
+}
+
+.mobile-layout-landscape .game-ui {
+  top: 10px !important;
+  font-size: 14px !important;
+}
+
+/* Orientation-aware adjustments for all mobile screens */
+@media (max-width: 767px) and (orientation: portrait) {
+  /* Portrait: Stack UI vertically, more top-to-bottom */
+  .theme-toggle {
+    top: 10px !important;
+    right: 10px !important;
+  }
+
+  .quality-settings {
+    top: 50px !important;
+    right: 10px !important;
+  }
+
+  .performance-monitor {
+    top: 90px !important;
+    right: 10px !important;
+    font-size: 10px !important;
+  }
+
+  /* Help and tutorial buttons */
+  button[style*="position: fixed"] {
+    font-size: 14px !important;
+    padding: 8px 16px !important;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Landscape: Spread UI horizontally, minimize vertical space */
+  .theme-toggle {
+    top: 5px !important;
+    right: 10px !important;
+    scale: 0.9;
+  }
+
+  .quality-settings {
+    top: 5px !important;
+    right: 60px !important;
+    scale: 0.9;
+  }
+
+  .performance-monitor {
+    top: 5px !important;
+    right: 120px !important;
+    font-size: 9px !important;
+  }
+
+  /* Compact buttons in landscape */
+  button[style*="position: fixed"] {
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+  }
+
+  /* Connection status */
+  div[style*="Solo — Offline"],
+  div[style*="Connection"] {
+    top: 5px !important;
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+  }
 }

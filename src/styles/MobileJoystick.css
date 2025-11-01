@@ -1,0 +1,182 @@
+/* Mobile Joystick Styles */
+.joystick-container {
+  position: fixed;
+  bottom: 40px;
+  z-index: 1000;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.joystick-container.left {
+  left: 40px;
+}
+
+.joystick-container.right {
+  right: 40px;
+}
+
+.joystick-label {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.joystick-base {
+  width: 120px;
+  height: 120px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  position: relative;
+  backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
+}
+
+.joystick-container.active .joystick-base {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.joystick-knob {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(
+    135deg,
+    rgba(117, 6, 145, 0.8),
+    rgba(0, 0, 0, 0.8)
+  );
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.05s ease-out;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.joystick-container.active .joystick-knob {
+  background: linear-gradient(135deg, rgba(117, 6, 145, 1), rgba(0, 0, 0, 0.9));
+  box-shadow: 0 6px 15px rgba(117, 6, 145, 0.5);
+}
+
+/* Center dot indicator */
+.joystick-knob::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+}
+
+/* Hide on desktop (non-touch devices), show on touch devices */
+@media (hover: hover) and (pointer: fine) {
+  .joystick-container {
+    display: none;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .joystick-container {
+    display: block;
+  }
+}
+
+/* Smaller joysticks on very small screens */
+@media (max-width: 400px) {
+  .joystick-container.left {
+    left: 20px;
+  }
+
+  .joystick-container.right {
+    right: 20px;
+  }
+
+  .joystick-base {
+    width: 100px;
+    height: 100px;
+  }
+
+  .joystick-knob {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* Portrait mode - stack joysticks with more spacing */
+@media (max-width: 767px) and (orientation: portrait) {
+  .joystick-container {
+    bottom: max(30px, env(safe-area-inset-bottom, 20px));
+  }
+
+  .joystick-container.left {
+    left: max(30px, env(safe-area-inset-left, 20px));
+  }
+
+  .joystick-container.right {
+    right: max(30px, env(safe-area-inset-right, 20px));
+  }
+
+  /* Slightly smaller in portrait to avoid UI overlap */
+  .joystick-base {
+    width: 110px;
+    height: 110px;
+  }
+
+  .joystick-knob {
+    width: 55px;
+    height: 55px;
+  }
+}
+
+/* Landscape mode adjustments - more compact for limited vertical space */
+@media (max-height: 500px) and (orientation: landscape) {
+  .joystick-container {
+    bottom: 15px;
+  }
+
+  .joystick-container.left {
+    left: 15px;
+  }
+
+  .joystick-container.right {
+    right: 15px;
+  }
+
+  .joystick-base {
+    width: 90px;
+    height: 90px;
+  }
+
+  .joystick-knob {
+    width: 45px;
+    height: 45px;
+  }
+
+  .joystick-label {
+    font-size: 10px;
+    top: -20px;
+  }
+}
+
+/* Very tall portrait screens - more bottom spacing */
+@media (min-aspect-ratio: 1/2) and (orientation: portrait) {
+  .joystick-container {
+    bottom: 50px;
+  }
+}

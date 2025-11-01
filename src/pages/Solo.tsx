@@ -14,11 +14,28 @@ import ChatBox from "../components/ChatBox";
 import CollisionSystem from "../components/CollisionSystem";
 import GameManager, { GameState, Player } from "../components/GameManager";
 import GameUI from "../components/GameUI";
-import { KeyDisplay, W, A, S, D, SHIFT } from "../components/utils";
+import {
+  KeyDisplay,
+  W,
+  A,
+  S,
+  D,
+  Q,
+  E,
+  SHIFT,
+  SPACE,
+} from "../components/utils";
+import { MobileJoystick } from "../components/MobileJoystick";
+import { MobileButton } from "../components/MobileButton";
+import { useOrientation } from "../components/useOrientation";
+import SpacemanModel from "../components/SpacemanModel";
 import "../styles/App.css";
+import { getSoundManager } from "../components/SoundManager";
+import PauseMenu from "../components/PauseMenu";
+import { useNavigate } from "react-router-dom";
+import { filterProfanity } from "../lib/constants/profanity";
 
-const RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 1000; // Start with 1 second
+// Solo mode: no reconnection needed
 const MAX_CHAT_MESSAGES = 50;
 
 interface ChatMessage {
@@ -108,8 +125,181 @@ const UserWrapper: React.FC<UserWrapperProps> = ({
   );
 };
 
+const TerrainPlane: React.FC = () => {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  useEffect(() => {
+    if (!meshRef.current) return;
+
+    // Add height variation to terrain using vertex manipulation
+    const geometry = meshRef.current.geometry as THREE.PlaneGeometry;
+
+    // Safety check for test environment
+    if (!geometry || !geometry.getAttribute) return;
+
+    const positionAttribute = geometry.getAttribute("position");
+    if (!positionAttribute) return;
+
+    // Generate simple rolling hills using noise-like function
+    for (let i = 0; i < positionAttribute.count; i++) {
+      const x = positionAttribute.getX(i);
+      const y = positionAttribute.getY(i);
+
+      // Multiple sine waves for varied terrain
+      const height =
+        Math.sin(x * 0.1) * 0.3 +
+        Math.cos(y * 0.15) * 0.25 +
+        Math.sin((x + y) * 0.08) * 0.2 +
+        Math.sin(x * 0.3) * Math.cos(y * 0.3) * 0.15;
+
+      positionAttribute.setZ(i, height);
+    }
+
+    positionAttribute.needsUpdate = true;
+    geometry.computeVertexNormals(); // Recalculate normals for proper lighting
+  }, []);
+
+  return (
+    <mesh
+      ref={meshRef}
+      position={[0, -0.1, 0]}
+      rotation={[-Math.PI / 2, 0, 0]}
+      receiveShadow
+    >
+      <planeGeometry args={[100, 100, 64, 64]} />{" "}
+      {/* Increased segments for terrain detail */}
+      <meshStandardMaterial
+        color="#8B8680"
+        roughness={0.95}
+        metalness={0.1}
+      />{" "}
+      {/* Moon-like gray */}
+    </mesh>
+  );
+};
+
+interface BotCharacterProps {
+  playerPosition: [number, number, number];
+  isPaused: boolean;
+  onPositionUpdate: (position: [number, number, number]) => void;
+  isIt: boolean;
+  playerIsIt: boolean;
+  onTagPlayer: () => void;
+}
+
+const BotCharacter: React.FC<BotCharacterProps> = ({
+  playerPosition,
+  isPaused,
+  onPositionUpdate,
+  isIt,
+  playerIsIt,
+  onTagPlayer,
+}) => {
+  const meshRef = useRef<THREE.Group>(null);
+  const lastTagTime = useRef(0);
+  const isPausedAfterTag = useRef(false);
+  const pauseEndTime = useRef(0);
+  const CHASE_RADIUS = 10; // Start chasing when player is within 10 units
+  const BOT_SPEED = 1.5; // Bot moves at 1.5 units/second
+  const FLEE_SPEED = 1.8; // Slightly slower than player max speed (2.0)
+  const TAG_COOLDOWN = 2000; // 2 second cooldown between tags
+  const TAG_DISTANCE = 1.5; // Distance to tag
+  const PAUSE_AFTER_TAG = 1000; // Pause for 1 second after tagging
+  const INITIAL_POSITION: [number, number, number] = [5, 0.5, 5];
+
+  useFrame((state, delta) => {
+    if (!meshRef.current || isPaused) return;
+
+    const now = Date.now();
+
+    // Check if bot is paused after tagging
+    if (isPausedAfterTag.current) {
+      if (now >= pauseEndTime.current) {
+        isPausedAfterTag.current = false;
+      } else {
+        // Bot is frozen, show visual indicator by slightly pulsing scale
+        const pulse = 1 + Math.sin(now * 0.01) * 0.1;
+        meshRef.current.scale.set(pulse, pulse, pulse);
+        return;
+      }
+    } else {
+      meshRef.current.scale.set(1, 1, 1);
+    }
+
+    const botPos = meshRef.current.position;
+    const playerPos = new THREE.Vector3(...playerPosition);
+    const distance = botPos.distanceTo(playerPos);
+
+    // Behavior depends on who is IT
+    if (isIt) {
+      // Bot is IT - chase player to tag them
+      if (distance < CHASE_RADIUS && distance > TAG_DISTANCE) {
+        // Chase player
+        const direction = new THREE.Vector3()
+          .subVectors(playerPos, botPos)
+          .normalize();
+
+        botPos.x += direction.x * BOT_SPEED * delta;
+        botPos.z += direction.z * BOT_SPEED * delta;
+
+        // Rotate bot to face player
+        const angle = Math.atan2(direction.x, direction.z);
+        meshRef.current.rotation.y = angle;
+      } else if (
+        distance <= TAG_DISTANCE &&
+        now - lastTagTime.current > TAG_COOLDOWN
+      ) {
+        // Tag the player!
+        lastTagTime.current = now;
+        isPausedAfterTag.current = true;
+        pauseEndTime.current = now + PAUSE_AFTER_TAG;
+        onTagPlayer();
+      }
+    } else if (playerIsIt) {
+      // Player is IT - flee from player
+      if (distance < CHASE_RADIUS) {
+        // Flee away from player
+        const direction = new THREE.Vector3()
+          .subVectors(botPos, playerPos) // Reversed direction to flee
+          .normalize();
+
+        botPos.x += direction.x * FLEE_SPEED * delta;
+        botPos.z += direction.z * FLEE_SPEED * delta;
+
+        // Rotate bot to face away from player
+        const angle = Math.atan2(direction.x, direction.z);
+        meshRef.current.rotation.y = angle;
+      }
+    }
+
+    // Notify parent of position change
+    onPositionUpdate([botPos.x, botPos.y, botPos.z]);
+  });
+
+  return (
+    <group ref={meshRef} position={INITIAL_POSITION}>
+      <SpacemanModel color={isIt ? "#ff4444" : "#44ff44"} isIt={isIt} />
+      {/* Bot label - yellow sphere above head */}
+      <mesh position={[0, 1.5, 0]}>
+        <sphereGeometry args={[0.12, 8, 8]} />
+        <meshBasicMaterial color="#ffff00" />
+      </mesh>
+      {/* Chase radius indicator - transparent ring at ground level */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.49, 0]}>
+        <ringGeometry args={[CHASE_RADIUS - 0.2, CHASE_RADIUS, 32]} />
+        <meshBasicMaterial
+          color="#ffaa00"
+          transparent
+          opacity={0.2}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  );
+};
+
 interface PlayerCharacterProps {
-  keysPressed: { [key: string]: boolean };
+  keysPressedRef: React.MutableRefObject<{ [key: string]: boolean }>;
   socketClient: Socket | null;
   mouseControls: {
     leftClick: boolean;
@@ -121,16 +311,41 @@ interface PlayerCharacterProps {
   clients: Clients;
   gameManager: GameManager | null;
   currentPlayerId: string;
+  joystickMove: { x: number; y: number };
+  joystickCamera: { x: number; y: number };
+  lastWalkSoundTimeRef: React.MutableRefObject<number>;
+  isPaused: boolean;
+  onPositionUpdate?: (position: [number, number, number]) => void;
+  playerIsIt?: boolean;
+  setPlayerIsIt?: (isIt: boolean) => void;
+  setBotIsIt?: (isIt: boolean) => void;
 }
 
-const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
-  keysPressed,
-  socketClient,
-  mouseControls,
-  clients,
-  gameManager,
-  currentPlayerId,
-}) => {
+export interface PlayerCharacterHandle {
+  resetPosition: () => void;
+}
+
+const PlayerCharacter = React.forwardRef<
+  PlayerCharacterHandle,
+  PlayerCharacterProps
+>((props, ref) => {
+  const {
+    keysPressedRef,
+    socketClient,
+    mouseControls,
+    clients,
+    gameManager,
+    currentPlayerId,
+    joystickMove,
+    joystickCamera,
+    lastWalkSoundTimeRef,
+    isPaused,
+    onPositionUpdate,
+    playerIsIt,
+    setPlayerIsIt,
+    setBotIsIt,
+  } = props;
+
   const meshRef = useRef<THREE.Group>(null);
   const velocity = useRef(new THREE.Vector3());
   const direction = useRef(new THREE.Vector3());
@@ -141,6 +356,32 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   const isFirstMouse = useRef(true);
   const collisionSystem = useRef(new CollisionSystem());
   const lastTagCheck = useRef(0);
+  const frameCounter = useRef(0);
+
+  // Jump mechanics - Moon-like low gravity physics
+  const isJumping = useRef(false);
+  const verticalVelocity = useRef(0);
+  const jumpHoldTime = useRef(0); // Track how long space is held
+  const JUMP_INITIAL_FORCE = 0.08; // Initial thrust
+  const JUMP_HOLD_FORCE = 0.12; // Additional thrust while holding
+  const JUMP_MAX_HOLD_TIME = 0.5; // Max seconds to hold for extra height
+  const GRAVITY = 0.003; // Moon gravity (much lower)
+  const GROUND_Y = 0.5;
+  const AIR_RESISTANCE = 0.98; // Floaty feeling (slight drag)
+
+  // Expose reset function to parent via ref
+  React.useImperativeHandle(ref, () => ({
+    resetPosition: () => {
+      if (meshRef.current) {
+        meshRef.current.position.set(0, 0.5, 0);
+      }
+      cameraRotation.current = { horizontal: 0, vertical: 0.2 };
+      velocity.current.set(0, 0, 0);
+      direction.current.set(0, 0, 0);
+      isJumping.current = false;
+      verticalVelocity.current = 0;
+    },
+  }));
 
   // gated debug logger - only logs in dev
   const debug = (...args: unknown[]) => {
@@ -153,7 +394,15 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
   };
 
   useFrame((state, delta) => {
-    if (!meshRef.current) return;
+    frameCounter.current++;
+
+    if (!meshRef.current || isPaused) {
+      // Debug: Log if we're not processing frames (every 100 frames)
+      if (frameCounter.current % 100 === 0) {
+        debug("Frame skipped:", { hasMesh: !!meshRef.current, isPaused });
+      }
+      return;
+    }
 
     // WoW-style camera controls
     const bothMouseButtons =
@@ -207,6 +456,37 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       skycam.current = false;
     }
 
+    // Joystick camera rotation
+    if (joystickCamera.x !== 0 || joystickCamera.y !== 0) {
+      const joystickSensitivity = 0.03;
+      cameraRotation.current.horizontal -=
+        joystickCamera.x * joystickSensitivity * delta;
+      cameraRotation.current.vertical +=
+        joystickCamera.y * joystickSensitivity * delta;
+    }
+
+    // Keyboard camera rotation (A/D keys) - Also rotates character
+    if (keysPressedRef.current[A]) {
+      cameraRotation.current.horizontal += 2 * delta; // Rotate left
+      // Also rotate character to match camera direction
+      if (meshRef.current) {
+        meshRef.current.rotation.y = cameraRotation.current.horizontal;
+      }
+    }
+    if (keysPressedRef.current[D]) {
+      cameraRotation.current.horizontal -= 2 * delta; // Rotate right
+      // Also rotate character to match camera direction
+      if (meshRef.current) {
+        meshRef.current.rotation.y = cameraRotation.current.horizontal;
+      }
+    }
+
+    // Always clamp vertical rotation (from joystick too)
+    cameraRotation.current.vertical = Math.max(
+      -Math.PI / 3,
+      Math.min(Math.PI / 3, cameraRotation.current.vertical)
+    );
+
     // Calculate camera offset based on rotation
     const distance = 5;
     const offsetX =
@@ -225,10 +505,14 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
     direction.current.set(0, 0, 0);
 
     const hasKeyboardInput =
-      keysPressed[W] || keysPressed[S] || keysPressed[A] || keysPressed[D];
+      keysPressedRef.current[W] ||
+      keysPressedRef.current[S] ||
+      keysPressedRef.current[Q] ||
+      keysPressedRef.current[E];
+    const hasJoystickInput = joystickMove.x !== 0 || joystickMove.y !== 0;
 
     // WoW-style auto-run: both mouse buttons held = move forward
-    if (bothMouseButtons || hasKeyboardInput) {
+    if (bothMouseButtons || hasKeyboardInput || hasJoystickInput) {
       // Movement relative to camera direction
       const forward = new THREE.Vector3();
       const right = new THREE.Vector3();
@@ -251,17 +535,31 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       }
 
       // Keyboard input (can combine with mouse movement)
-      if (keysPressed[W]) direction.current.add(forward);
-      if (keysPressed[S]) direction.current.sub(forward);
-      if (keysPressed[A]) direction.current.sub(right);
-      if (keysPressed[D]) direction.current.add(right);
+      if (keysPressedRef.current[W]) {
+        direction.current.add(forward);
+      }
+      if (keysPressedRef.current[S]) {
+        direction.current.sub(forward);
+      }
+      if (keysPressedRef.current[Q]) {
+        direction.current.sub(right);
+      }
+      if (keysPressedRef.current[E]) {
+        direction.current.add(right);
+      }
+
+      // Joystick input (Y is forward/back, X is left/right)
+      if (hasJoystickInput) {
+        direction.current.add(forward.clone().multiplyScalar(-joystickMove.y));
+        direction.current.add(right.clone().multiplyScalar(joystickMove.x));
+      }
 
       // Normalize direction
       if (direction.current.length() > 0) {
         direction.current.normalize();
 
         // Apply speed (faster with shift)
-        const speed = keysPressed[SHIFT] ? 5 : 2;
+        const speed = keysPressedRef.current[SHIFT] ? 5 : 2;
         velocity.current.copy(direction.current).multiplyScalar(speed * delta);
 
         // Calculate new position with collision detection
@@ -301,7 +599,80 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
                 resolvedPosition.add(pushDirection.multiplyScalar(0.1));
               }
 
-              // Handle tagging (only if current player is 'it' and close enough)
+              // Handle tagging bot in solo mode
+              if (
+                clientId === "bot-1" &&
+                playerIsIt &&
+                distance < 1.5 &&
+                now - lastTagCheck.current > 2000
+              ) {
+                // Player tagged the bot!
+                if (setPlayerIsIt) setPlayerIsIt(false);
+                if (setBotIsIt) setBotIsIt(true);
+
+                // Victory celebration effects
+                const flashOverlay = document.createElement("div");
+                flashOverlay.style.position = "fixed";
+                flashOverlay.style.top = "0";
+                flashOverlay.style.left = "0";
+                flashOverlay.style.width = "100%";
+                flashOverlay.style.height = "100%";
+                flashOverlay.style.backgroundColor = "rgba(0, 255, 100, 0.3)";
+                flashOverlay.style.pointerEvents = "none";
+                flashOverlay.style.zIndex = "9999";
+                flashOverlay.style.animation = "fadeOut 0.8s ease-out";
+                document.body.appendChild(flashOverlay);
+                setTimeout(() => flashOverlay.remove(), 800);
+
+                // Show victory text with fireworks
+                const victoryText = document.createElement("div");
+                victoryText.textContent = "🎉🎆 TAG! ��🎉";
+                victoryText.style.position = "fixed";
+                victoryText.style.top = "50%";
+                victoryText.style.left = "50%";
+                victoryText.style.transform = "translate(-50%, -50%)";
+                victoryText.style.fontSize = "72px";
+                victoryText.style.fontWeight = "bold";
+                victoryText.style.color = "#FFD700";
+                victoryText.style.textShadow =
+                  "0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.5)";
+                victoryText.style.pointerEvents = "none";
+                victoryText.style.zIndex = "10000";
+                victoryText.style.animation =
+                  "popIn 0.5s ease-out, fadeOut 1s ease-out 0.5s";
+                document.body.appendChild(victoryText);
+                setTimeout(() => victoryText.remove(), 1500);
+
+                // Confetti burst!
+                for (let i = 0; i < 50; i++) {
+                  const confetti = document.createElement("div");
+                  confetti.textContent = ["🎉", "🎊", "⭐", "✨", "💫"][
+                    Math.floor(Math.random() * 5)
+                  ];
+                  confetti.style.position = "fixed";
+                  confetti.style.left = "50%";
+                  confetti.style.top = "50%";
+                  confetti.style.fontSize = "24px";
+                  confetti.style.pointerEvents = "none";
+                  confetti.style.zIndex = "9998";
+
+                  const angle = (Math.PI * 2 * i) / 50;
+                  const velocity = 200 + Math.random() * 200;
+                  const tx = Math.cos(angle) * velocity;
+                  const ty = Math.sin(angle) * velocity;
+
+                  confetti.style.animation = `confettiBurst 1.5s ease-out forwards`;
+                  confetti.style.setProperty("--tx", `${tx}px`);
+                  confetti.style.setProperty("--ty", `${ty}px`);
+
+                  document.body.appendChild(confetti);
+                  setTimeout(() => confetti.remove(), 1500);
+                }
+
+                lastTagCheck.current = now;
+              }
+
+              // Handle tagging (multiplayer mode - only if current player is 'it' and close enough)
               if (
                 gameState.isActive &&
                 gameState.mode === "tag" &&
@@ -313,6 +684,70 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
 
                 debug(`Attempting to tag player ${clientId}`);
                 if (gameManager.tagPlayer(myId, clientId)) {
+                  // Play tag sound
+                  const soundMgr = getSoundManager();
+                  soundMgr.playTagSound();
+
+                  // Victory celebration effects
+                  // Flash screen green briefly
+                  const flashOverlay = document.createElement("div");
+                  flashOverlay.style.position = "fixed";
+                  flashOverlay.style.top = "0";
+                  flashOverlay.style.left = "0";
+                  flashOverlay.style.width = "100%";
+                  flashOverlay.style.height = "100%";
+                  flashOverlay.style.backgroundColor = "rgba(0, 255, 100, 0.3)";
+                  flashOverlay.style.pointerEvents = "none";
+                  flashOverlay.style.zIndex = "9999";
+                  flashOverlay.style.animation = "fadeOut 0.8s ease-out";
+                  document.body.appendChild(flashOverlay);
+                  setTimeout(() => flashOverlay.remove(), 800);
+
+                  // Show victory text with fireworks
+                  const victoryText = document.createElement("div");
+                  victoryText.textContent = "🎉🎆 TAG! ��🎉";
+                  victoryText.style.position = "fixed";
+                  victoryText.style.top = "50%";
+                  victoryText.style.left = "50%";
+                  victoryText.style.transform = "translate(-50%, -50%)";
+                  victoryText.style.fontSize = "72px";
+                  victoryText.style.fontWeight = "bold";
+                  victoryText.style.color = "#FFD700";
+                  victoryText.style.textShadow =
+                    "0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.5)";
+                  victoryText.style.pointerEvents = "none";
+                  victoryText.style.zIndex = "10000";
+                  victoryText.style.animation =
+                    "popIn 0.5s ease-out, fadeOut 1s ease-out 0.5s";
+                  document.body.appendChild(victoryText);
+                  setTimeout(() => victoryText.remove(), 1500);
+
+                  // Confetti burst!
+                  for (let i = 0; i < 50; i++) {
+                    const confetti = document.createElement("div");
+                    confetti.textContent = ["🎉", "🎊", "⭐", "✨", "💫"][
+                      Math.floor(Math.random() * 5)
+                    ];
+                    confetti.style.position = "fixed";
+                    confetti.style.left = "50%";
+                    confetti.style.top = "50%";
+                    confetti.style.fontSize = "24px";
+                    confetti.style.pointerEvents = "none";
+                    confetti.style.zIndex = "9998";
+
+                    const angle = (Math.PI * 2 * i) / 50;
+                    const velocity = 200 + Math.random() * 200;
+                    const tx = Math.cos(angle) * velocity;
+                    const ty = Math.sin(angle) * velocity;
+
+                    confetti.style.animation = `confettiBurst 1.5s ease-out forwards`;
+                    confetti.style.setProperty("--tx", `${tx}px`);
+                    confetti.style.setProperty("--ty", `${ty}px`);
+
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 1500);
+                  }
+
                   if (socketClient) {
                     socketClient.emit("player-tagged", {
                       taggerId: myId,
@@ -329,6 +764,15 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
         // Move the character to resolved position
         meshRef.current.position.copy(resolvedPosition);
 
+        // Play walking sound (throttled to avoid spam)
+        const now = Date.now();
+        const walkSoundInterval = keysPressedRef.current[SHIFT] ? 250 : 400; // Faster sounds when running
+        if (now - lastWalkSoundTimeRef.current > walkSoundInterval) {
+          const soundMgr = getSoundManager();
+          soundMgr.playWalkSound();
+          lastWalkSoundTimeRef.current = now;
+        }
+
         // Debug: Log position changes (gated)
         if (
           Math.abs(direction.current.x) > 0 ||
@@ -337,11 +781,8 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
           debug("Character position:", meshRef.current.position.toArray());
         }
 
-        // Rotate character to face movement direction only when not in skycam
-        const angle = Math.atan2(direction.current.x, direction.current.z);
-        if (!skycam.current) {
-          meshRef.current.rotation.y = angle;
-        }
+        // Character rotation is now controlled by A/D keys (camera rotation)
+        // and doesn't auto-rotate to movement direction for strafing support
 
         // Emit position to server
         if (socketClient) {
@@ -351,6 +792,58 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
           });
         }
       }
+    }
+
+    // Jump mechanics (independent of horizontal movement) - Floaty jetpack style
+    const isOnGround = meshRef.current.position.y <= GROUND_Y + 0.01;
+
+    if (keysPressedRef.current[SPACE] && isOnGround && !isJumping.current) {
+      // Start jump
+      isJumping.current = true;
+      verticalVelocity.current = JUMP_INITIAL_FORCE;
+      jumpHoldTime.current = 0;
+    }
+
+    // Apply continuous thrust while space is held (jetpack style)
+    if (isJumping.current && keysPressedRef.current[SPACE]) {
+      if (jumpHoldTime.current < JUMP_MAX_HOLD_TIME) {
+        jumpHoldTime.current += delta;
+        // Gradual thrust that decreases over time
+        const thrustMultiplier = 1 - jumpHoldTime.current / JUMP_MAX_HOLD_TIME;
+        verticalVelocity.current += JUMP_HOLD_FORCE * delta * thrustMultiplier;
+      }
+    }
+
+    // Apply moon gravity and air resistance
+    if (isJumping.current || !isOnGround) {
+      verticalVelocity.current -= GRAVITY;
+      verticalVelocity.current *= AIR_RESISTANCE; // Floaty feeling
+      meshRef.current.position.y += verticalVelocity.current;
+
+      // Apply horizontal air drift (maintain momentum)
+      if (velocity.current.length() > 0) {
+        const airDrift = velocity.current.clone().multiplyScalar(0.95);
+        meshRef.current.position.x += airDrift.x * delta * 10;
+        meshRef.current.position.z += airDrift.z * delta * 10;
+      }
+
+      // Check if landed
+      if (meshRef.current.position.y <= GROUND_Y) {
+        meshRef.current.position.y = GROUND_Y;
+        isJumping.current = false;
+        verticalVelocity.current = 0;
+        jumpHoldTime.current = 0;
+        // Play landing sound
+        const soundMgr = getSoundManager();
+        soundMgr.playJumpSound(); // Reuse jump sound for landing
+      }
+    }
+
+    // Notify parent of position changes
+    if (onPositionUpdate && meshRef.current) {
+      onPositionUpdate(
+        meshRef.current.position.toArray() as [number, number, number]
+      );
     }
 
     // Smooth third-person camera follow with rotation
@@ -383,31 +876,32 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
 
   return (
     <group ref={meshRef} position={[0, 0.5, 0]}>
-      <mesh castShadow>
-        <boxGeometry args={[0.5, 1, 0.5]} />
-        <meshStandardMaterial color={isIt ? "#ff4444" : "#4a90e2"} />
-      </mesh>
-
-      {/* Glow effect for 'it' player */}
-      {isIt && (
-        <mesh>
-          <boxGeometry args={[0.6, 1.1, 0.6]} />
-          <meshBasicMaterial color="#ff6666" transparent opacity={0.15} />
-        </mesh>
-      )}
+      <SpacemanModel color={isIt ? "#ff4444" : "#4a90e2"} isIt={isIt} />
     </group>
   );
-};
+});
+
+PlayerCharacter.displayName = "PlayerCharacter";
 
 const Solo: React.FC = () => {
+  const navigate = useNavigate();
   const [socketClient, setSocketClient] = useState<Socket | null>(null);
   const [clients, setClients] = useState<Clients>({});
   const [isConnected, setIsConnected] = useState(false);
   const [currentFPS, setCurrentFPS] = useState(60);
   const [quality, setQuality] = useState<QualityLevel>("auto");
-  const [keysPressed, setKeysPressed] = useState<{ [key: string]: boolean }>(
-    {}
-  );
+  const [isPaused, setIsPaused] = useState(false);
+  const [isSoundMuted, setIsSoundMuted] = useState(false);
+  const [keysPressed, setKeysPressed] = useState<{ [key: string]: boolean }>({
+    [W]: false,
+    [A]: false,
+    [S]: false,
+    [D]: false,
+    [Q]: false,
+    [E]: false,
+    [SHIFT]: false,
+    [SPACE]: false,
+  });
   const [mouseControls, setMouseControls] = useState({
     leftClick: false,
     rightClick: false,
@@ -432,11 +926,37 @@ const Solo: React.FC = () => {
   const [localPlayerId] = useState(
     () => `local-${Math.random().toString(36).slice(2, 8)}`
   );
-  const reconnectAttempts = useRef(0);
-  const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [joystickMove, setJoystickMove] = useState({ x: 0, y: 0 });
+  const [joystickCamera, setJoystickCamera] = useState({ x: 0, y: 0 });
+  const [playerPosition, setPlayerPosition] = useState<
+    [number, number, number]
+  >([0, 0.5, 0]);
+  const [playerIsIt, setPlayerIsIt] = useState(true); // Player starts as IT
+  const [botIsIt, setBotIsIt] = useState(false);
+  const orientation = useOrientation();
+  // Solo mode: no reconnection refs needed
   const keyDisplayRef = useRef<KeyDisplay | null>(null);
   const lastEmitTime = useRef(0);
   const gameManager = useRef<GameManager | null>(null);
+  const soundManager = useRef(getSoundManager());
+  const lastWalkSoundTime = useRef(0);
+  const isPausedRef = useRef(isPaused);
+  const chatVisibleRef = useRef(chatVisible);
+  const keysPressedRef = useRef(keysPressed);
+  const playerCharacterRef = useRef<PlayerCharacterHandle>(null);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    chatVisibleRef.current = chatVisible;
+  }, [chatVisible]);
+
+  useEffect(() => {
+    keysPressedRef.current = keysPressed;
+  }, [keysPressed]);
 
   // Quality presets
   const getQualitySettings = (level: QualityLevel) => {
@@ -470,40 +990,21 @@ const Solo: React.FC = () => {
 
   const qualitySettings = getQualitySettings(quality);
 
-  const attemptReconnect = useCallback(() => {
-    if (reconnectAttempts.current < RECONNECT_ATTEMPTS) {
-      const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current);
-      debug(
-        `Reconnecting in ${delay}ms (attempt ${
-          reconnectAttempts.current + 1
-        }/${RECONNECT_ATTEMPTS})`
-      );
-
-      reconnectTimeout.current = setTimeout(() => {
-        reconnectAttempts.current += 1;
-        if (socketClient) {
-          socketClient.connect();
-        }
-      }, delay);
-    } else {
-      console.error("Max reconnection attempts reached");
-    }
-  }, [socketClient]);
-
+  // Solo mode: no reconnection logic needed
   const connectSocket = useCallback(() => {
     const serverUrl =
       import.meta.env.VITE_SOCKET_SERVER_URL || window.location.origin;
     const socket = io(serverUrl, {
       transports: ["websocket"],
-      reconnection: true,
-      reconnectionAttempts: RECONNECT_ATTEMPTS,
-      reconnectionDelay: RECONNECT_DELAY,
+      reconnection: false, // Disable auto-reconnection for solo mode
+      reconnectionAttempts: 0,
+      reconnectionDelay: 0,
+      autoConnect: false, // Don't connect automatically
     });
 
     socket.on("connect", () => {
       debug("Socket connected:", socket.id);
       setIsConnected(true);
-      reconnectAttempts.current = 0;
 
       // Initialize game manager
       if (!gameManager.current) {
@@ -536,31 +1037,48 @@ const Solo: React.FC = () => {
         gameManager.current.removePlayer(socket.id);
       }
 
-      // Attempt manual reconnection with exponential backoff
-      if (reason === "io server disconnect" || reason === "transport close") {
-        attemptReconnect();
-      }
+      // Solo mode: no reconnection needed
     });
 
     socket.on("connect_error", (error) => {
-      // Always log connection errors regardless of DEV flag
-      console.error("Socket connection error:", error);
-      attemptReconnect();
+      // Solo mode: connection errors are expected, just log to debug
+      debug("Socket connection error (expected in solo mode):", error);
     });
 
     setSocketClient(socket);
     return socket;
-  }, [attemptReconnect]);
+  }, []); // No dependencies needed - solo mode doesn't reconnect
 
   useEffect(() => {
     const socket = connectSocket();
     return () => {
-      if (reconnectTimeout.current) {
-        clearTimeout(reconnectTimeout.current);
-      }
       socket.disconnect();
     };
   }, [connectSocket]);
+
+  // Mobile viewport handling - hide browser bars
+  useEffect(() => {
+    const hideBrowserUI = () => {
+      // Scroll to hide address bar on mobile
+      window.scrollTo(0, 1);
+
+      // Update viewport height for mobile browsers
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+
+    // Hide on load
+    hideBrowserUI();
+
+    // Re-hide on orientation change or resize
+    window.addEventListener("resize", hideBrowserUI);
+    window.addEventListener("orientationchange", hideBrowserUI);
+
+    return () => {
+      window.removeEventListener("resize", hideBrowserUI);
+      window.removeEventListener("orientationchange", hideBrowserUI);
+    };
+  }, []);
 
   // Initialize GameManager immediately for solo mode (even without socket)
   useEffect(() => {
@@ -581,27 +1099,67 @@ const Solo: React.FC = () => {
         position: [0, 0.5, 0],
         rotation: [0, 0, 0],
       });
+
+      // Add inert bot for collision testing
+      const botId = "bot-1";
+      newGameManager.addPlayer({
+        id: botId,
+        name: "Bot",
+        position: [5, 0.5, 5],
+        rotation: [0, 0, 0],
+      });
+
+      // Add bot to clients for collision detection
+      setClients({
+        [botId]: {
+          position: [5, 0.5, 5],
+          rotation: [0, 0, 0],
+        },
+      });
+
       setGamePlayers(new Map(newGameManager.getPlayers()));
+
+      // Start background music
+      setTimeout(() => {
+        soundManager.current.startBackgroundMusic();
+      }, 1000);
     }
   }, [localPlayerId]);
 
+  // Cleanup sound on unmount
+  useEffect(() => {
+    const manager = soundManager.current;
+    return () => {
+      manager.dispose();
+    };
+  }, []);
+
   // Keyboard controls
   useEffect(() => {
-    debug("Setting up keyboard controls");
     keyDisplayRef.current = new KeyDisplay();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      debug("Key down:", key);
+
+      // Handle ESC key for pause menu
+      if (key === "escape") {
+        e.preventDefault();
+        setIsPaused((prev) => !prev);
+        return;
+      }
 
       // Handle chat toggle
-      if (key === "c" && !chatVisible) {
+      if (key === "c" && !chatVisibleRef.current && !isPausedRef.current) {
         setChatVisible(true);
         return;
       }
 
-      // Only process movement keys if chat is not visible
-      if (!chatVisible && [W, A, S, D, SHIFT].includes(key)) {
+      // Only process movement keys if chat is not visible and game is not paused
+      if (
+        !chatVisibleRef.current &&
+        !isPausedRef.current &&
+        [W, A, S, D, Q, E, SHIFT, SPACE].includes(key)
+      ) {
         e.preventDefault(); // Prevent default browser behavior
         setKeysPressed((prev) => ({ ...prev, [key]: true }));
         keyDisplayRef.current?.down(key);
@@ -612,8 +1170,12 @@ const Solo: React.FC = () => {
       const key = e.key.toLowerCase();
       debug("Key up:", key);
 
-      // Only process movement keys if chat is not visible
-      if (!chatVisible && [W, A, S, D, SHIFT].includes(key)) {
+      // Only process movement keys if chat is not visible and game is not paused
+      if (
+        !chatVisibleRef.current &&
+        !isPausedRef.current &&
+        [W, A, S, D, Q, E, SHIFT, SPACE].includes(key)
+      ) {
         e.preventDefault();
         setKeysPressed((prev) => ({ ...prev, [key]: false }));
         keyDisplayRef.current?.up(key);
@@ -655,24 +1217,46 @@ const Solo: React.FC = () => {
       e.preventDefault(); // Disable right-click context menu
     };
 
+    // Fix for stuck keys when focus is lost
+    const handleWindowBlur = () => {
+      // Reset all key states when window loses focus
+      setKeysPressed({
+        [W]: false,
+        [A]: false,
+        [S]: false,
+        [D]: false,
+        [Q]: false,
+        [E]: false,
+        [SHIFT]: false,
+        [SPACE]: false,
+      });
+      // Clear visual key display
+      if (keyDisplayRef.current) {
+        [W, A, S, D, Q, E, SHIFT, SPACE].forEach((key) => {
+          keyDisplayRef.current?.up(key);
+        });
+      }
+    };
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mouseup", handleMouseUp);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("contextmenu", handleContextMenu);
+    window.addEventListener("blur", handleWindowBlur);
 
     return () => {
-      debug("Cleaning up keyboard and mouse controls");
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mouseup", handleMouseUp);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("contextmenu", handleContextMenu);
+      window.removeEventListener("blur", handleWindowBlur);
       // Clean up KeyDisplay elements
       if (keyDisplayRef.current) {
-        [W, A, S, D, SHIFT].forEach((key) => {
+        [W, A, S, D, Q, E, SHIFT, SPACE].forEach((key) => {
           const element = keyDisplayRef.current?.map.get(key);
           if (element && element.parentNode) {
             element.parentNode.removeChild(element);
@@ -680,7 +1264,7 @@ const Solo: React.FC = () => {
         });
       }
     };
-  }, [chatVisible]);
+  }, []); // No dependencies - handlers use refs for current values
 
   useEffect(() => {
     if (!socketClient) return;
@@ -743,13 +1327,16 @@ const Solo: React.FC = () => {
 
   const handleSendMessage = useCallback(
     (message: string) => {
+      // Apply profanity filter (imported from shared constants)
+      const filteredMessage = filterProfanity(message);
+
       const chatMessage: ChatMessage = {
         id: Date.now().toString(),
         playerId: socketClient?.id || localPlayerId,
         playerName: socketClient?.id
           ? `Player ${socketClient.id.slice(-4)}`
           : "Solo Player",
-        message,
+        message: filteredMessage,
         timestamp: Date.now(),
       };
 
@@ -799,10 +1386,65 @@ const Solo: React.FC = () => {
   };
 
   const handleEndGame = () => {
-    if (!socketClient || !gameManager.current) return;
+    if (!gameManager.current) return;
 
     gameManager.current.endGame();
-    socketClient.emit("game-end");
+    if (socketClient) {
+      socketClient.emit("game-end");
+    }
+  };
+
+  const handlePauseResume = () => {
+    setIsPaused(false);
+  };
+
+  const handlePauseRestart = () => {
+    // Reset game state
+    setIsPaused(false);
+
+    // End current game if active
+    if (gameManager.current) {
+      gameManager.current.endGame();
+    }
+
+    // Reset player position via ref
+    if (playerCharacterRef.current) {
+      playerCharacterRef.current.resetPosition();
+    }
+
+    // Clear all key states
+    setKeysPressed({
+      [W]: false,
+      [A]: false,
+      [S]: false,
+      [D]: false,
+      [Q]: false,
+      [E]: false,
+      [SHIFT]: false,
+      [SPACE]: false,
+    });
+
+    // Reset mouse controls
+    setMouseControls({
+      leftClick: false,
+      rightClick: false,
+      middleClick: false,
+      mouseX: 0,
+      mouseY: 0,
+    });
+
+    // Reset joystick positions
+    setJoystickMove({ x: 0, y: 0 });
+    setJoystickCamera({ x: 0, y: 0 });
+  };
+
+  const handlePauseQuit = () => {
+    // Clean up and navigate to home
+    setIsPaused(false);
+    if (gameManager.current) {
+      gameManager.current.endGame();
+    }
+    navigate("/");
   };
 
   // Update game timer
@@ -815,6 +1457,14 @@ const Solo: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [gameState.isActive]);
+
+  // Monitor keysPressed changes for debugging
+  useEffect(() => {
+    const anyKeyPressed = Object.values(keysPressed).some((pressed) => pressed);
+    if (anyKeyPressed) {
+      debug("Keys state updated:", keysPressed);
+    }
+  }, [keysPressed]);
 
   // Emit position updates (throttled to 50ms)
   useEffect(() => {
@@ -835,12 +1485,76 @@ const Solo: React.FC = () => {
   }, [keysPressed, socketClient, isConnected]);
 
   return (
-    <>
+    <div
+      className={
+        orientation === "portrait"
+          ? "mobile-layout-portrait"
+          : "mobile-layout-landscape"
+      }
+    >
+      <PauseMenu
+        isVisible={isPaused}
+        onResume={handlePauseResume}
+        onRestart={handlePauseRestart}
+        onQuit={handlePauseQuit}
+      />
       <Tutorial />
       <HelpModal />
       <ThemeToggle />
       <PerformanceMonitor onPerformanceChange={setCurrentFPS} />
       <QualitySettings onChange={setQuality} currentFPS={currentFPS} />
+
+      {/* Control buttons - top left */}
+      <div
+        style={{
+          position: "fixed",
+          top: "10px",
+          left: "10px",
+          display: "flex",
+          gap: "8px",
+          zIndex: 1000,
+        }}
+      >
+        {/* Sound toggle button */}
+        <button
+          onClick={() => {
+            const isMuted = soundManager.current.toggleMute();
+            setIsSoundMuted(isMuted);
+            console.log(isMuted ? "Sound muted" : "Sound unmuted");
+          }}
+          style={{
+            padding: "8px 12px",
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+            borderRadius: "4px",
+            color: "white",
+            cursor: "pointer",
+            fontSize: "20px",
+          }}
+          title="Toggle sound"
+        >
+          {isSoundMuted ? "🔇" : "🔊"}
+        </button>
+
+        {/* Chat toggle button */}
+        <button
+          onClick={toggleChat}
+          style={{
+            padding: "8px 12px",
+            backgroundColor: chatVisible
+              ? "rgba(74, 144, 226, 0.8)"
+              : "rgba(0, 0, 0, 0.7)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+            borderRadius: "4px",
+            color: "white",
+            cursor: "pointer",
+            fontSize: "20px",
+          }}
+          title="Toggle chat (C key)"
+        >
+          �
+        </button>
+      </div>
       <ChatBox
         isVisible={chatVisible}
         onToggle={toggleChat}
@@ -874,13 +1588,21 @@ const Solo: React.FC = () => {
           opacity: 0.5,
         }}
       >
-        Solo — Offline
+        Solo — Offline {orientation === "portrait" ? "📱" : "🖥️"}
       </div>
       <Canvas
         camera={{ position: [0, 3, -5], near: 0.1, far: 1000 }}
         shadows={qualitySettings.shadows}
         dpr={qualitySettings.pixelRatio}
         gl={{ antialias: qualitySettings.antialias }}
+        style={{
+          width: "100vw",
+          height: "100vh",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          touchAction: "none",
+        }}
       >
         <OrbitControls enabled={false} />
         <ambientLight intensity={0.7} />
@@ -922,23 +1644,121 @@ const Solo: React.FC = () => {
         </mesh>
 
         {/* Ground plane for better visibility */}
-        <mesh
-          position={[0, -0.1, 0]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          receiveShadow
-        >
-          <planeGeometry args={[100, 100]} />
-          <meshStandardMaterial color="#2a2a2a" />
+        {/* Terrain with height variation */}
+        <TerrainPlane />
+
+        {/* Visible obstacles matching collision system */}
+        {/* Corner obstacles */}
+        <mesh position={[17.5, 1.5, 17.5]} castShadow receiveShadow>
+          <boxGeometry args={[5, 3, 5]} />
+          <meshStandardMaterial color="#8B4513" roughness={0.9} />
+        </mesh>
+
+        <mesh position={[-17.5, 1.5, -17.5]} castShadow receiveShadow>
+          <boxGeometry args={[5, 3, 5]} />
+          <meshStandardMaterial color="#8B4513" roughness={0.9} />
+        </mesh>
+
+        <mesh position={[17.5, 1.5, -17.5]} castShadow receiveShadow>
+          <boxGeometry args={[5, 3, 5]} />
+          <meshStandardMaterial color="#8B4513" roughness={0.9} />
+        </mesh>
+
+        <mesh position={[-17.5, 1.5, 17.5]} castShadow receiveShadow>
+          <boxGeometry args={[5, 3, 5]} />
+          <meshStandardMaterial color="#8B4513" roughness={0.9} />
+        </mesh>
+
+        {/* Moon Rocks - scattered on terrain with collision */}
+        <mesh position={[5, 0.8, 5]} castShadow receiveShadow>
+          <sphereGeometry args={[1.5, 8, 6]} />
+          <meshStandardMaterial color="#6B6660" roughness={0.9} />
+        </mesh>
+        <mesh position={[-8, 0.6, 10]} castShadow receiveShadow>
+          <sphereGeometry args={[1.2, 8, 6]} />
+          <meshStandardMaterial color="#7B7670" roughness={0.9} />
+        </mesh>
+        <mesh position={[12, 0.5, -5]} castShadow receiveShadow>
+          <sphereGeometry args={[1.0, 8, 6]} />
+          <meshStandardMaterial color="#5B5650" roughness={0.9} />
+        </mesh>
+        <mesh position={[-15, 0.9, -8]} castShadow receiveShadow>
+          <sphereGeometry args={[1.6, 8, 6]} />
+          <meshStandardMaterial color="#8B8680" roughness={0.9} />
+        </mesh>
+        <mesh position={[3, 0.7, -12]} castShadow receiveShadow>
+          <sphereGeometry args={[1.3, 8, 6]} />
+          <meshStandardMaterial color="#7B7670" roughness={0.9} />
+        </mesh>
+        <mesh position={[-3, 0.4, 15]} castShadow receiveShadow>
+          <sphereGeometry args={[0.8, 8, 6]} />
+          <meshStandardMaterial color="#6B6660" roughness={0.9} />
         </mesh>
 
         <PlayerCharacter
-          keysPressed={keysPressed}
+          ref={playerCharacterRef}
+          keysPressedRef={keysPressedRef}
           socketClient={socketClient}
           mouseControls={mouseControls}
           clients={clients}
           gameManager={currentGameManager}
           currentPlayerId={socketClient?.id || localPlayerId}
+          joystickMove={joystickMove}
+          joystickCamera={joystickCamera}
+          lastWalkSoundTimeRef={lastWalkSoundTime}
+          isPaused={isPaused}
+          onPositionUpdate={(position) => setPlayerPosition(position)}
+          playerIsIt={playerIsIt}
+          setPlayerIsIt={setPlayerIsIt}
+          setBotIsIt={setBotIsIt}
         />
+
+        {/* AI Bot - chases/flees player */}
+        <BotCharacter
+          playerPosition={playerPosition}
+          isPaused={isPaused}
+          isIt={botIsIt}
+          playerIsIt={playerIsIt}
+          onTagPlayer={() => {
+            // Bot tagged the player - swap IT status
+            setPlayerIsIt(false);
+            setBotIsIt(true);
+
+            // Show tag notification
+            const tagText = document.createElement("div");
+            tagText.textContent = "🤖 BOT TAGGED YOU! 🤖";
+            tagText.style.position = "fixed";
+            tagText.style.top = "50%";
+            tagText.style.left = "50%";
+            tagText.style.transform = "translate(-50%, -50%)";
+            tagText.style.fontSize = "72px";
+            tagText.style.fontWeight = "bold";
+            tagText.style.color = "#ff4444";
+            tagText.style.textShadow =
+              "0 0 20px rgba(255, 68, 68, 0.8), 0 0 40px rgba(255, 68, 68, 0.5)";
+            tagText.style.pointerEvents = "none";
+            tagText.style.zIndex = "10000";
+            tagText.style.animation =
+              "popIn 0.5s ease-out, fadeOut 1s ease-out 0.5s";
+            document.body.appendChild(tagText);
+            setTimeout(() => tagText.remove(), 1500);
+          }}
+          onPositionUpdate={(position) => {
+            // Update bot in clients for collision detection
+            setClients((prev) => ({
+              ...prev,
+              "bot-1": {
+                ...prev["bot-1"],
+                position,
+              },
+            }));
+            // Update bot in game manager
+            if (gameManager.current) {
+              gameManager.current.updatePlayer("bot-1", { position });
+            }
+          }}
+        />
+
         {Object.keys(clients)
           .filter((clientKey) => socketClient && clientKey !== socketClient.id)
           .map((client) => {
@@ -955,7 +1775,32 @@ const Solo: React.FC = () => {
             );
           })}
       </Canvas>
-    </>
+
+      {/* Mobile Joysticks - only appear on touch devices */}
+      <MobileJoystick
+        side="left"
+        label="MOVE"
+        onMove={(x, y) => setJoystickMove({ x, y })}
+      />
+      <MobileJoystick
+        side="right"
+        label="CAMERA"
+        onMove={(x, y) => setJoystickCamera({ x, y })}
+      />
+
+      {/* Mobile Jump Button */}
+      <MobileButton
+        label="JUMP"
+        icon="⬆️"
+        position="bottom-center"
+        onPress={() => {
+          setKeysPressed((prev) => ({ ...prev, [SPACE]: true }));
+        }}
+        onRelease={() => {
+          setKeysPressed((prev) => ({ ...prev, [SPACE]: false }));
+        }}
+      />
+    </div>
   );
 };
 

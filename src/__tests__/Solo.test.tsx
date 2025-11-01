@@ -58,7 +58,16 @@ describe("Solo Component", () => {
   });
 
   const renderWithTheme = (component: React.ReactElement) => {
-    return render(<ThemeProvider>{component}</ThemeProvider>);
+    return render(
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
+        <ThemeProvider>{component}</ThemeProvider>
+      </BrowserRouter>
+    );
   };
 
   it("renders Canvas component", () => {
@@ -174,22 +183,14 @@ describe("Solo Component", () => {
     // Mock import.meta.env for Vite
     vi.stubEnv("VITE_SOCKET_SERVER_URL", "http://custom-server.com");
 
-    renderWithTheme(
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <Solo />
-      </BrowserRouter>
-    );
+    renderWithTheme(<Solo />);
 
     expect(io).toHaveBeenCalledWith("http://custom-server.com", {
       transports: ["websocket"],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnection: false,
+      reconnectionAttempts: 0,
+      reconnectionDelay: 0,
+      autoConnect: false,
     });
 
     vi.unstubAllEnvs();
@@ -199,22 +200,14 @@ describe("Solo Component", () => {
     // Ensure no env variable is set
     vi.unstubAllEnvs();
 
-    renderWithTheme(
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <Solo />
-      </BrowserRouter>
-    );
+    renderWithTheme(<Solo />);
 
     expect(io).toHaveBeenCalledWith(window.location.origin, {
       transports: ["websocket"],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnection: false,
+      reconnectionAttempts: 0,
+      reconnectionDelay: 0,
+      autoConnect: false,
     });
   });
 });
