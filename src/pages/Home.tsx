@@ -35,16 +35,30 @@ const Home = () => {
       {/* Game Modes Grid */}
       <div className="game-modes-grid">
         <div
-          className="mode-card mode-card-solo"
+          className="mode-card mode-card-solo mode-card-flip-container"
           onClick={() => navigate("/solo")}
           onKeyDown={(e) => e.key === "Enter" && navigate("/solo")}
           role="button"
           tabIndex={0}
         >
-          <div className="mode-icon">🎯</div>
-          <h3>Solo Practice</h3>
-          <p>Hone your skills against AI opponents</p>
-          <div className="mode-status status-live">● LIVE NOW</div>
+          <div className="mode-card-flip-inner">
+            <div className="mode-card-front">
+              <div className="mode-icon">🎯</div>
+              <h3>Solo Practice</h3>
+              <p>Hone your skills against AI opponents</p>
+              <div className="mode-status status-live">● LIVE NOW</div>
+            </div>
+            <div className="mode-card-back">
+              <div className="mode-icon">✨</div>
+              <h3>Game Features</h3>
+              <ul className="flip-features-list">
+                <li>🤖 Smart AI opponents</li>
+                <li>🏃 Tag game mechanics</li>
+                <li>🚀 Jetpack movement</li>
+                <li>🎮 Practice controls</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
         <div className="mode-card mode-card-disabled">

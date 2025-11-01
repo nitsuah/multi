@@ -130,6 +130,64 @@
   overflow: hidden;
 }
 
+/* Flip card container */
+.mode-card-flip-container {
+  perspective: 1000px;
+  padding: 0; /* Remove padding from container */
+}
+
+.mode-card-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 250px;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.mode-card-flip-container:hover .mode-card-flip-inner {
+  transform: rotateY(180deg);
+}
+
+.mode-card-front,
+.mode-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  padding: 2rem; /* Add padding to front/back */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.mode-card-front {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+}
+
+.mode-card-back {
+  background: rgba(102, 126, 234, 0.15);
+  border-radius: 20px;
+  transform: rotateY(180deg);
+}
+
+.flip-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0 0;
+  text-align: left;
+}
+
+.flip-features-list li {
+  padding: 0.5rem 0;
+  color: var(--text-color);
+  font-size: 0.95rem;
+}
+
 .mode-card::before {
   content: "";
   position: absolute;
