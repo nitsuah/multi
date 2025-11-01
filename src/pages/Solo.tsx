@@ -167,7 +167,12 @@ const TerrainPlane: React.FC = () => {
     >
       <planeGeometry args={[100, 100, 64, 64]} />{" "}
       {/* Increased segments for terrain detail */}
-      <meshStandardMaterial color="#2a5a2a" roughness={0.8} metalness={0.2} />
+      <meshStandardMaterial
+        color="#8B8680"
+        roughness={0.95}
+        metalness={0.1}
+      />{" "}
+      {/* Moon-like gray */}
     </mesh>
   );
 };
@@ -176,48 +181,103 @@ interface BotCharacterProps {
   playerPosition: [number, number, number];
   isPaused: boolean;
   onPositionUpdate: (position: [number, number, number]) => void;
+  isIt: boolean;
+  playerIsIt: boolean;
+  onTagPlayer: () => void;
 }
 
 const BotCharacter: React.FC<BotCharacterProps> = ({
   playerPosition,
   isPaused,
   onPositionUpdate,
+  isIt,
+  playerIsIt,
+  onTagPlayer,
 }) => {
   const meshRef = useRef<THREE.Group>(null);
+  const lastTagTime = useRef(0);
+  const isPausedAfterTag = useRef(false);
+  const pauseEndTime = useRef(0);
   const CHASE_RADIUS = 10; // Start chasing when player is within 10 units
   const BOT_SPEED = 1.5; // Bot moves at 1.5 units/second
+  const FLEE_SPEED = 1.8; // Slightly slower than player max speed (2.0)
+  const TAG_COOLDOWN = 2000; // 2 second cooldown between tags
+  const TAG_DISTANCE = 1.5; // Distance to tag
+  const PAUSE_AFTER_TAG = 1000; // Pause for 1 second after tagging
   const INITIAL_POSITION: [number, number, number] = [5, 0.5, 5];
 
   useFrame((state, delta) => {
     if (!meshRef.current || isPaused) return;
 
+    const now = Date.now();
+
+    // Check if bot is paused after tagging
+    if (isPausedAfterTag.current) {
+      if (now >= pauseEndTime.current) {
+        isPausedAfterTag.current = false;
+      } else {
+        // Bot is frozen, show visual indicator by slightly pulsing scale
+        const pulse = 1 + Math.sin(now * 0.01) * 0.1;
+        meshRef.current.scale.set(pulse, pulse, pulse);
+        return;
+      }
+    } else {
+      meshRef.current.scale.set(1, 1, 1);
+    }
+
     const botPos = meshRef.current.position;
     const playerPos = new THREE.Vector3(...playerPosition);
     const distance = botPos.distanceTo(playerPos);
 
-    // Only chase if player is within radius
-    if (distance < CHASE_RADIUS && distance > 0.5) {
-      // Calculate direction to player
-      const direction = new THREE.Vector3()
-        .subVectors(playerPos, botPos)
-        .normalize();
+    // Behavior depends on who is IT
+    if (isIt) {
+      // Bot is IT - chase player to tag them
+      if (distance < CHASE_RADIUS && distance > TAG_DISTANCE) {
+        // Chase player
+        const direction = new THREE.Vector3()
+          .subVectors(playerPos, botPos)
+          .normalize();
 
-      // Move toward player
-      botPos.x += direction.x * BOT_SPEED * delta;
-      botPos.z += direction.z * BOT_SPEED * delta;
+        botPos.x += direction.x * BOT_SPEED * delta;
+        botPos.z += direction.z * BOT_SPEED * delta;
 
-      // Rotate bot to face player
-      const angle = Math.atan2(direction.x, direction.z);
-      meshRef.current.rotation.y = angle;
+        // Rotate bot to face player
+        const angle = Math.atan2(direction.x, direction.z);
+        meshRef.current.rotation.y = angle;
+      } else if (
+        distance <= TAG_DISTANCE &&
+        now - lastTagTime.current > TAG_COOLDOWN
+      ) {
+        // Tag the player!
+        lastTagTime.current = now;
+        isPausedAfterTag.current = true;
+        pauseEndTime.current = now + PAUSE_AFTER_TAG;
+        onTagPlayer();
+      }
+    } else if (playerIsIt) {
+      // Player is IT - flee from player
+      if (distance < CHASE_RADIUS) {
+        // Flee away from player
+        const direction = new THREE.Vector3()
+          .subVectors(botPos, playerPos) // Reversed direction to flee
+          .normalize();
 
-      // Notify parent of position change
-      onPositionUpdate([botPos.x, botPos.y, botPos.z]);
+        botPos.x += direction.x * FLEE_SPEED * delta;
+        botPos.z += direction.z * FLEE_SPEED * delta;
+
+        // Rotate bot to face away from player
+        const angle = Math.atan2(direction.x, direction.z);
+        meshRef.current.rotation.y = angle;
+      }
     }
+
+    // Notify parent of position change
+    onPositionUpdate([botPos.x, botPos.y, botPos.z]);
   });
 
   return (
     <group ref={meshRef} position={INITIAL_POSITION}>
-      <SpacemanModel color="#ff4444" isIt={false} />
+      <SpacemanModel color={isIt ? "#ff4444" : "#44ff44"} isIt={isIt} />
       {/* Bot label - yellow sphere above head */}
       <mesh position={[0, 1.5, 0]}>
         <sphereGeometry args={[0.12, 8, 8]} />
@@ -255,6 +315,9 @@ interface PlayerCharacterProps {
   lastWalkSoundTimeRef: React.MutableRefObject<number>;
   isPaused: boolean;
   onPositionUpdate?: (position: [number, number, number]) => void;
+  playerIsIt?: boolean;
+  setPlayerIsIt?: (isIt: boolean) => void;
+  setBotIsIt?: (isIt: boolean) => void;
 }
 
 export interface PlayerCharacterHandle {
@@ -277,6 +340,9 @@ const PlayerCharacter = React.forwardRef<
     lastWalkSoundTimeRef,
     isPaused,
     onPositionUpdate,
+    playerIsIt,
+    setPlayerIsIt,
+    setBotIsIt,
   } = props;
 
   const meshRef = useRef<THREE.Group>(null);
@@ -398,12 +464,20 @@ const PlayerCharacter = React.forwardRef<
         joystickCamera.y * joystickSensitivity * delta;
     }
 
-    // Keyboard camera rotation (A/D keys)
+    // Keyboard camera rotation (A/D keys) - Also rotates character
     if (keysPressedRef.current[A]) {
       cameraRotation.current.horizontal += 2 * delta; // Rotate left
+      // Also rotate character to match camera direction
+      if (meshRef.current) {
+        meshRef.current.rotation.y = cameraRotation.current.horizontal;
+      }
     }
     if (keysPressedRef.current[D]) {
       cameraRotation.current.horizontal -= 2 * delta; // Rotate right
+      // Also rotate character to match camera direction
+      if (meshRef.current) {
+        meshRef.current.rotation.y = cameraRotation.current.horizontal;
+      }
     }
 
     // Always clamp vertical rotation (from joystick too)
@@ -524,7 +598,54 @@ const PlayerCharacter = React.forwardRef<
                 resolvedPosition.add(pushDirection.multiplyScalar(0.1));
               }
 
-              // Handle tagging (only if current player is 'it' and close enough)
+              // Handle tagging bot in solo mode
+              if (
+                clientId === "bot-1" &&
+                playerIsIt &&
+                distance < 1.5 &&
+                now - lastTagCheck.current > 2000
+              ) {
+                // Player tagged the bot!
+                if (setPlayerIsIt) setPlayerIsIt(false);
+                if (setBotIsIt) setBotIsIt(true);
+
+                // Victory celebration effects
+                const flashOverlay = document.createElement("div");
+                flashOverlay.style.position = "fixed";
+                flashOverlay.style.top = "0";
+                flashOverlay.style.left = "0";
+                flashOverlay.style.width = "100%";
+                flashOverlay.style.height = "100%";
+                flashOverlay.style.backgroundColor = "rgba(0, 255, 100, 0.3)";
+                flashOverlay.style.pointerEvents = "none";
+                flashOverlay.style.zIndex = "9999";
+                flashOverlay.style.animation = "fadeOut 0.8s ease-out";
+                document.body.appendChild(flashOverlay);
+                setTimeout(() => flashOverlay.remove(), 800);
+
+                // Show victory text
+                const victoryText = document.createElement("div");
+                victoryText.textContent = "🎉 TAG! 🎉";
+                victoryText.style.position = "fixed";
+                victoryText.style.top = "50%";
+                victoryText.style.left = "50%";
+                victoryText.style.transform = "translate(-50%, -50%)";
+                victoryText.style.fontSize = "72px";
+                victoryText.style.fontWeight = "bold";
+                victoryText.style.color = "#FFD700";
+                victoryText.style.textShadow =
+                  "0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.5)";
+                victoryText.style.pointerEvents = "none";
+                victoryText.style.zIndex = "10000";
+                victoryText.style.animation =
+                  "popIn 0.5s ease-out, fadeOut 1s ease-out 0.5s";
+                document.body.appendChild(victoryText);
+                setTimeout(() => victoryText.remove(), 1500);
+
+                lastTagCheck.current = now;
+              }
+
+              // Handle tagging (multiplayer mode - only if current player is 'it' and close enough)
               if (
                 gameState.isActive &&
                 gameState.mode === "tag" &&
@@ -607,11 +728,8 @@ const PlayerCharacter = React.forwardRef<
           debug("Character position:", meshRef.current.position.toArray());
         }
 
-        // Rotate character to face movement direction only when not in skycam
-        const angle = Math.atan2(direction.current.x, direction.current.z);
-        if (!skycam.current) {
-          meshRef.current.rotation.y = angle;
-        }
+        // Character rotation is now controlled by A/D keys (camera rotation)
+        // and doesn't auto-rotate to movement direction for strafing support
 
         // Emit position to server
         if (socketClient) {
@@ -760,6 +878,8 @@ const Solo: React.FC = () => {
   const [playerPosition, setPlayerPosition] = useState<
     [number, number, number]
   >([0, 0.5, 0]);
+  const [playerIsIt, setPlayerIsIt] = useState(true); // Player starts as IT
+  const [botIsIt, setBotIsIt] = useState(false);
   const orientation = useOrientation();
   // Solo mode: no reconnection refs needed
   const keyDisplayRef = useRef<KeyDisplay | null>(null);
@@ -1536,6 +1656,32 @@ const Solo: React.FC = () => {
           <meshStandardMaterial color="#8B4513" roughness={0.9} />
         </mesh>
 
+        {/* Moon Rocks - scattered on terrain with collision */}
+        <mesh position={[5, 0.8, 5]} castShadow receiveShadow>
+          <sphereGeometry args={[1.5, 8, 6]} />
+          <meshStandardMaterial color="#6B6660" roughness={0.9} />
+        </mesh>
+        <mesh position={[-8, 0.6, 10]} castShadow receiveShadow>
+          <sphereGeometry args={[1.2, 8, 6]} />
+          <meshStandardMaterial color="#7B7670" roughness={0.9} />
+        </mesh>
+        <mesh position={[12, 0.5, -5]} castShadow receiveShadow>
+          <sphereGeometry args={[1.0, 8, 6]} />
+          <meshStandardMaterial color="#5B5650" roughness={0.9} />
+        </mesh>
+        <mesh position={[-15, 0.9, -8]} castShadow receiveShadow>
+          <sphereGeometry args={[1.6, 8, 6]} />
+          <meshStandardMaterial color="#8B8680" roughness={0.9} />
+        </mesh>
+        <mesh position={[3, 0.7, -12]} castShadow receiveShadow>
+          <sphereGeometry args={[1.3, 8, 6]} />
+          <meshStandardMaterial color="#7B7670" roughness={0.9} />
+        </mesh>
+        <mesh position={[-3, 0.4, 15]} castShadow receiveShadow>
+          <sphereGeometry args={[0.8, 8, 6]} />
+          <meshStandardMaterial color="#6B6660" roughness={0.9} />
+        </mesh>
+
         <PlayerCharacter
           ref={playerCharacterRef}
           keysPressedRef={keysPressedRef}
@@ -1549,12 +1695,41 @@ const Solo: React.FC = () => {
           lastWalkSoundTimeRef={lastWalkSoundTime}
           isPaused={isPaused}
           onPositionUpdate={(position) => setPlayerPosition(position)}
+          playerIsIt={playerIsIt}
+          setPlayerIsIt={setPlayerIsIt}
+          setBotIsIt={setBotIsIt}
         />
 
-        {/* AI Bot - chases player when in range */}
+        {/* AI Bot - chases/flees player */}
         <BotCharacter
           playerPosition={playerPosition}
           isPaused={isPaused}
+          isIt={botIsIt}
+          playerIsIt={playerIsIt}
+          onTagPlayer={() => {
+            // Bot tagged the player - swap IT status
+            setPlayerIsIt(false);
+            setBotIsIt(true);
+
+            // Show tag notification
+            const tagText = document.createElement("div");
+            tagText.textContent = "🤖 BOT TAGGED YOU! 🤖";
+            tagText.style.position = "fixed";
+            tagText.style.top = "50%";
+            tagText.style.left = "50%";
+            tagText.style.transform = "translate(-50%, -50%)";
+            tagText.style.fontSize = "72px";
+            tagText.style.fontWeight = "bold";
+            tagText.style.color = "#ff4444";
+            tagText.style.textShadow =
+              "0 0 20px rgba(255, 68, 68, 0.8), 0 0 40px rgba(255, 68, 68, 0.5)";
+            tagText.style.pointerEvents = "none";
+            tagText.style.zIndex = "10000";
+            tagText.style.animation =
+              "popIn 0.5s ease-out, fadeOut 1s ease-out 0.5s";
+            document.body.appendChild(tagText);
+            setTimeout(() => tagText.remove(), 1500);
+          }}
           onPositionUpdate={(position) => {
             // Update bot in clients for collision detection
             setClients((prev) => ({
