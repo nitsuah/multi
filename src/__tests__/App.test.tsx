@@ -1,11 +1,11 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { expect, describe, it, vi } from 'vitest';
-import App from '../pages/App';
-import '@testing-library/jest-dom';
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { expect, describe, it, vi } from "vitest";
+import App from "../pages/App";
+import "@testing-library/jest-dom";
 
 // Mock socket.io-client to prevent real connections
-vi.mock('socket.io-client', () => ({
+vi.mock("socket.io-client", () => ({
   io: vi.fn(() => ({
     on: vi.fn(),
     off: vi.fn(),
@@ -16,29 +16,33 @@ vi.mock('socket.io-client', () => ({
 }));
 
 // Mock Spline to prevent loading issues
-vi.mock('@splinetool/react-spline', () => ({
+vi.mock("@splinetool/react-spline", () => ({
   default: () => <div>Spline Mock</div>,
 }));
 
-describe('App Routing', () => {
-  it('renders Home page by default', async () => {
-    window.history.pushState({}, '', '/');
+describe("App Routing", () => {
+  it("renders Home page by default", async () => {
+    window.history.pushState({}, "", "/");
     render(<App />);
-    // Wait for lazy-loaded content to render
-    const playButton = await screen.findByText(/PLAY🌑DARKMOON/i, {}, { timeout: 3000 });
+    // Wait for lazy-loaded content to render - text now has spaces
+    const playButton = await screen.findByText(
+      /PLAY.*DARKMOON/i,
+      {},
+      { timeout: 3000 }
+    );
     expect(playButton).toBeInTheDocument();
   });
 
-  it('renders Solo page on /solo', async () => {
-    window.history.pushState({}, '', '/solo');
+  it("renders Solo page on /solo", async () => {
+    window.history.pushState({}, "", "/solo");
     render(<App />);
     // Solo page renders - just verify no crash
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     expect(document.body).toBeInTheDocument();
   });
 
-  it('renders 404 page on unknown route', () => {
-    window.history.pushState({}, '', '/not-a-real-route');
+  it("renders 404 page on unknown route", () => {
+    window.history.pushState({}, "", "/not-a-real-route");
     render(<App />);
     expect(screen.getByText(/404 - Page Not Found/i)).toBeInTheDocument();
   });

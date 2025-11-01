@@ -132,7 +132,12 @@ const TerrainPlane: React.FC = () => {
 
     // Add height variation to terrain using vertex manipulation
     const geometry = meshRef.current.geometry as THREE.PlaneGeometry;
+
+    // Safety check for test environment
+    if (!geometry || !geometry.getAttribute) return;
+
     const positionAttribute = geometry.getAttribute("position");
+    if (!positionAttribute) return;
 
     // Generate simple rolling hills using noise-like function
     for (let i = 0; i < positionAttribute.count; i++) {
