@@ -122,15 +122,15 @@
 /* Portrait mode - stack joysticks with more spacing */
 @media (max-width: 767px) and (orientation: portrait) {
   .joystick-container {
-    bottom: 30px;
+    bottom: max(30px, env(safe-area-inset-bottom, 20px));
   }
 
   .joystick-container.left {
-    left: 30px;
+    left: max(30px, env(safe-area-inset-left, 20px));
   }
 
   .joystick-container.right {
-    right: 30px;
+    right: max(30px, env(safe-area-inset-right, 20px));
   }
 
   /* Slightly smaller in portrait to avoid UI overlap */

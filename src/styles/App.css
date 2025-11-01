@@ -1,3 +1,19 @@
+/* Dynamic Viewport Height for Mobile Browser Address Bar */
+:root {
+  /* Fallback for browsers that don't support dvh */
+  --app-height: 100vh;
+
+  /* Use dynamic viewport height if available (accounts for address bar) */
+  --app-height: 100dvh;
+}
+
+/* For older browsers, use JavaScript fallback */
+@supports not (height: 100dvh) {
+  :root {
+    --app-height: var(--vh, 1vh) * 100;
+  }
+}
+
 /* Accessibility: Focus styles for buttons and links */
 button:focus,
 .poly-wallet:focus,
@@ -132,7 +148,8 @@ a:focus {
 }
 
 .container {
-  height: 100%;
+  height: var(--app-height);
+  min-height: var(--app-height);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -652,6 +669,30 @@ input:focus {
   }
   100% {
     background-position: 0% 50%;
+  }
+}
+
+/* Victory celebration animations */
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes popIn {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
   }
 }
 

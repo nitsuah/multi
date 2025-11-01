@@ -72,7 +72,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
       <button
         style={{
           position: "fixed",
-          bottom: "20px",
+          top: "20px",
           left: "20px",
           padding: "8px 12px",
           backgroundColor: "rgba(0, 0, 0, 0.7)",
@@ -95,7 +95,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
     <div
       style={{
         position: "fixed",
-        bottom: "20px",
+        top: "20px",
         left: "20px",
         width: "400px",
         height: "300px",
