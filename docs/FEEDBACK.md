@@ -6,7 +6,9 @@ Active QA feedback and issues. Completed items are removed.
 
 ### Mobile Joystick Touch (HIGH PRIORITY)
 
-Right joystick appears on a grey bar at top-right instead of lower-right. Left joystick doesn't respond to touch. Two-finger touch should work like right-click but doesn't. Investigate touch event handling and joystick positioning/responsiveness.
+Right joystick appears on a grey bar at top-right instead of lower-right. Left joystick doesn't respond to touch. Two-finger touch should work like right-click but doesn't. Single touch (not on joystick) should do nothing. Investigate touch event handling and joystick positioning/responsiveness.
+
+**Note**: May need input toggle for mobile controls or investigate proven React joystick libraries.
 
 ### Mobile Browser Address Bar (MEDIUM PRIORITY)
 

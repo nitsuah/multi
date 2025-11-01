@@ -1,4 +1,42 @@
-# Phase 8: Audio, Visual Polish & Mobile Fixes
+# Phase 8: RCS Thrusters, Audio, Visual Polish & Mobile Fixes
+
+## Priority: High - RCS Thruster System
+
+### 0. Implement RCS (Reaction Control System) Keyboard Layout
+
+**Concept**: Small spaceman floating around moon in low gravity needs directional RCS boosters to zoom around precisely.
+
+**Proposed Keyboard Layout** (QWEASDZXC):
+
+```text
+    Q(up-left)   W(up)      E(up-right)
+    A(left)      S(down)    D(right)
+    Z(down-left) X(down)    C(down-right)
+```
+
+**RCS Thruster Behavior**:
+
+- Each key fires thrusters in that direction relative to character
+- Adds momentum/velocity in that direction (not instant position change)
+- Works in 3D space (up/down included for vertical RCS)
+- Drift/inertia maintained between thruster firings
+- Visual thrust particles/cones show which RCS is firing
+- Sound effect per thruster burst
+
+**Implementation Notes**:
+
+- Update character physics to support multi-directional thrust
+- May need to adjust current WASD movement to work alongside RCS
+- Or replace WASD entirely with RCS system (pure momentum-based)
+- Consider cooldown or fuel system to prevent constant spamming
+- Low gravity should make each RCS burst impactful
+
+**Questions to Resolve**:
+
+- Replace current WASD movement or supplement it?
+- Camera independent or camera-relative thrust directions?
+- Fuel/cooldown limits or unlimited RCS use?
+- Should Space bar still exist as jump or be replaced by W/Q/E up thrusters?
 
 ## Priority: High - Mobile Issues
 
@@ -19,6 +57,9 @@
 - Right joystick controls camera (bottom-right)
 - Both respond to touch immediately
 - No visual glitches or grey bars
+- Two-finger touch works like right-click (when not on joysticks)
+- Single touch (not on joystick) does nothing
+- Chat toggle button works on touch
 
 ### 2. Fix Mobile Address Bar
 
@@ -33,8 +74,8 @@
 
 **Resources**:
 
-- https://developer.mozilla.org/en-US/docs/Web/API/Visual_Viewport_API
-- https://webkit.org/blog/7929/designing-websites-for-iphone-x/
+- <https://developer.mozilla.org/en-US/docs/Web/API/Visual_Viewport_API>
+- <https://webkit.org/blog/7929/designing-websites-for-iphone-x/>
 
 ## Priority: Medium - Audio System
 
