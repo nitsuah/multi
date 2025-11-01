@@ -237,15 +237,23 @@
 }
 
 .feature-item:hover {
-  transform: translateY(-5px);
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(102, 126, 234, 0.3);
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+  transform: translateY(-8px) scale(1.03);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(102, 126, 234, 0.5);
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3),
+    0 5px 15px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.feature-item:hover .feature-icon {
+  transform: scale(1.2) rotate(5deg);
+  transition: transform 0.3s ease;
 }
 
 .feature-icon {
   font-size: 2.5rem;
   margin-bottom: 1rem;
+  transition: transform 0.3s ease;
 }
 
 .feature-item h4 {
