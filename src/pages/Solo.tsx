@@ -202,9 +202,9 @@ const BotCharacter: React.FC<BotCharacterProps> = ({
   const CHASE_RADIUS = 10; // Start chasing when player is within 10 units
   const BOT_SPEED = 1.5; // Bot moves at 1.5 units/second
   const FLEE_SPEED = 1.8; // Slightly slower than player max speed (2.0)
-  const TAG_COOLDOWN = 2000; // 2 second cooldown between tags
-  const TAG_DISTANCE = 1.5; // Distance to tag
-  const PAUSE_AFTER_TAG = 1000; // Pause for 1 second after tagging
+  const TAG_COOLDOWN = 1500; // 1.5 second cooldown between tags
+  const TAG_DISTANCE = 1.2; // Reduced collision distance for easier tagging
+  const PAUSE_AFTER_TAG = 1500; // Pause for 1.5 seconds after tagging
   const INITIAL_POSITION: [number, number, number] = [5, 0.5, 5];
 
   useFrame((state, delta) => {
@@ -232,8 +232,8 @@ const BotCharacter: React.FC<BotCharacterProps> = ({
 
     // Behavior depends on who is IT
     if (isIt) {
-      // Bot is IT - chase player to tag them
-      if (distance < CHASE_RADIUS && distance > TAG_DISTANCE) {
+      // Bot is IT - ALWAYS chase player (no distance limit)
+      if (distance > TAG_DISTANCE) {
         // Chase player
         const direction = new THREE.Vector3()
           .subVectors(playerPos, botPos)
@@ -245,10 +245,7 @@ const BotCharacter: React.FC<BotCharacterProps> = ({
         // Rotate bot to face player
         const angle = Math.atan2(direction.x, direction.z);
         meshRef.current.rotation.y = angle;
-      } else if (
-        distance <= TAG_DISTANCE &&
-        now - lastTagTime.current > TAG_COOLDOWN
-      ) {
+      } else if (now - lastTagTime.current > TAG_COOLDOWN) {
         // Tag the player!
         lastTagTime.current = now;
         isPausedAfterTag.current = true;
@@ -256,7 +253,7 @@ const BotCharacter: React.FC<BotCharacterProps> = ({
         onTagPlayer();
       }
     } else if (playerIsIt) {
-      // Player is IT - flee from player
+      // Player is IT - only flee when player is within detection radius
       if (distance < CHASE_RADIUS) {
         // Flee away from player
         const direction = new THREE.Vector3()
@@ -362,12 +359,12 @@ const PlayerCharacter = React.forwardRef<
   const isJumping = useRef(false);
   const verticalVelocity = useRef(0);
   const jumpHoldTime = useRef(0); // Track how long space is held
-  const JUMP_INITIAL_FORCE = 0.08; // Initial thrust
-  const JUMP_HOLD_FORCE = 0.12; // Additional thrust while holding
-  const JUMP_MAX_HOLD_TIME = 0.5; // Max seconds to hold for extra height
-  const GRAVITY = 0.003; // Moon gravity (much lower)
+  const JUMP_INITIAL_FORCE = 0.1; // Initial thrust (increased from 0.08 for better launch)
+  const JUMP_HOLD_FORCE = 0.15; // Additional thrust while holding (increased from 0.12 for stronger jetpack)
+  const JUMP_MAX_HOLD_TIME = 1.0; // Max seconds to hold for extra height (doubled from 0.5 for longer thrust)
+  const GRAVITY = 0.002; // Moon gravity (reduced from 0.003 for more floaty feeling)
   const GROUND_Y = 0.5;
-  const AIR_RESISTANCE = 0.98; // Floaty feeling (slight drag)
+  const AIR_RESISTANCE = 0.99; // More floaty feeling (increased from 0.98 for less drag)
 
   // Expose reset function to parent via ref
   React.useImperativeHandle(ref, () => ({
@@ -599,16 +596,19 @@ const PlayerCharacter = React.forwardRef<
                 resolvedPosition.add(pushDirection.multiplyScalar(0.1));
               }
 
-              // Handle tagging bot in solo mode
+              // Handle tagging bot in solo mode (only during active tag game)
               if (
                 clientId === "bot-1" &&
+                gameState.mode === "tag" &&
+                gameState.isActive &&
                 playerIsIt &&
-                distance < 1.5 &&
-                now - lastTagCheck.current > 2000
+                distance < 1.2 &&
+                now - lastTagCheck.current > 1500
               ) {
                 // Player tagged the bot!
                 if (setPlayerIsIt) setPlayerIsIt(false);
                 if (setBotIsIt) setBotIsIt(true);
+                lastTagCheck.current = now;
 
                 // Victory celebration effects
                 const flashOverlay = document.createElement("div");
