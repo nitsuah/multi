@@ -47,11 +47,6 @@ export class CollisionSystem {
     );
 
     // Add some obstacles in the world
-    // Central pillar
-    this.boundaries.push(
-      new THREE.Box3(new THREE.Vector3(-2, 0, -2), new THREE.Vector3(2, 4, 2))
-    );
-
     // Corner obstacles
     this.boundaries.push(
       new THREE.Box3(new THREE.Vector3(15, 0, 15), new THREE.Vector3(20, 3, 20))

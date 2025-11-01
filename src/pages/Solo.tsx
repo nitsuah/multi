@@ -113,7 +113,7 @@ const UserWrapper: React.FC<UserWrapperProps> = ({
 };
 
 interface PlayerCharacterProps {
-  keysPressed: { [key: string]: boolean };
+  keysPressedRef: React.MutableRefObject<{ [key: string]: boolean }>;
   socketClient: Socket | null;
   mouseControls: {
     leftClick: boolean;
@@ -132,7 +132,7 @@ interface PlayerCharacterProps {
 }
 
 const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
-  keysPressed,
+  keysPressedRef,
   socketClient,
   mouseControls,
   clients,
@@ -261,18 +261,11 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
     direction.current.set(0, 0, 0);
 
     const hasKeyboardInput =
-      keysPressed[W] || keysPressed[S] || keysPressed[A] || keysPressed[D];
+      keysPressedRef.current[W] ||
+      keysPressedRef.current[S] ||
+      keysPressedRef.current[A] ||
+      keysPressedRef.current[D];
     const hasJoystickInput = joystickMove.x !== 0 || joystickMove.y !== 0;
-
-    // Debug: Log keyboard input detection (every 100 frames)
-    if (hasKeyboardInput && frameCounter.current % 100 === 0) {
-      debug("Keys pressed:", {
-        w: keysPressed[W],
-        a: keysPressed[A],
-        s: keysPressed[S],
-        d: keysPressed[D],
-      });
-    }
 
     // WoW-style auto-run: both mouse buttons held = move forward
     if (bothMouseButtons || hasKeyboardInput || hasJoystickInput) {
@@ -298,10 +291,18 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
       }
 
       // Keyboard input (can combine with mouse movement)
-      if (keysPressed[W]) direction.current.add(forward);
-      if (keysPressed[S]) direction.current.sub(forward);
-      if (keysPressed[A]) direction.current.sub(right);
-      if (keysPressed[D]) direction.current.add(right);
+      if (keysPressedRef.current[W]) {
+        direction.current.add(forward);
+      }
+      if (keysPressedRef.current[S]) {
+        direction.current.sub(forward);
+      }
+      if (keysPressedRef.current[A]) {
+        direction.current.sub(right);
+      }
+      if (keysPressedRef.current[D]) {
+        direction.current.add(right);
+      }
 
       // Joystick input (Y is forward/back, X is left/right)
       if (hasJoystickInput) {
@@ -314,7 +315,7 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
         direction.current.normalize();
 
         // Apply speed (faster with shift)
-        const speed = keysPressed[SHIFT] ? 5 : 2;
+        const speed = keysPressedRef.current[SHIFT] ? 5 : 2;
         velocity.current.copy(direction.current).multiplyScalar(speed * delta);
 
         // Calculate new position with collision detection
@@ -388,7 +389,7 @@ const PlayerCharacter: React.FC<PlayerCharacterProps> = ({
 
         // Play walking sound (throttled to avoid spam)
         const now = Date.now();
-        const walkSoundInterval = keysPressed[SHIFT] ? 250 : 400; // Faster sounds when running
+        const walkSoundInterval = keysPressedRef.current[SHIFT] ? 250 : 400; // Faster sounds when running
         if (now - lastWalkSoundTimeRef.current > walkSoundInterval) {
           const soundMgr = getSoundManager();
           soundMgr.playWalkSound();
@@ -516,6 +517,7 @@ const Solo: React.FC = () => {
   const lastWalkSoundTime = useRef(0);
   const isPausedRef = useRef(isPaused);
   const chatVisibleRef = useRef(chatVisible);
+  const keysPressedRef = useRef(keysPressed);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -525,6 +527,10 @@ const Solo: React.FC = () => {
   useEffect(() => {
     chatVisibleRef.current = chatVisible;
   }, [chatVisible]);
+
+  useEffect(() => {
+    keysPressedRef.current = keysPressed;
+  }, [keysPressed]);
 
   // Quality presets
   const getQualitySettings = (level: QualityLevel) => {
@@ -704,12 +710,10 @@ const Solo: React.FC = () => {
 
   // Keyboard controls
   useEffect(() => {
-    debug("Setting up keyboard controls");
     keyDisplayRef.current = new KeyDisplay();
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      debug("Key down:", key);
 
       // Handle ESC key for pause menu
       if (key === "escape") {
@@ -733,17 +737,6 @@ const Solo: React.FC = () => {
         e.preventDefault(); // Prevent default browser behavior
         setKeysPressed((prev) => ({ ...prev, [key]: true }));
         keyDisplayRef.current?.down(key);
-      } else {
-        debug(
-          "Key not processed:",
-          key,
-          "chatVisible:",
-          chatVisibleRef.current,
-          "isPaused:",
-          isPausedRef.current,
-          "isMovementKey:",
-          [W, A, S, D, SHIFT].includes(key)
-        );
       }
     };
 
@@ -806,7 +799,6 @@ const Solo: React.FC = () => {
     window.addEventListener("contextmenu", handleContextMenu);
 
     return () => {
-      debug("Cleaning up keyboard and mouse controls");
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("mousedown", handleMouseDown);
@@ -1200,7 +1192,7 @@ const Solo: React.FC = () => {
         </mesh>
 
         <PlayerCharacter
-          keysPressed={keysPressed}
+          keysPressedRef={keysPressedRef}
           socketClient={socketClient}
           mouseControls={mouseControls}
           clients={clients}
