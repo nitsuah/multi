@@ -2,6 +2,10 @@
 
 Active QA feedback and issues. Completed items are removed.
 
+## QA Feedback
+
+- [ ]
+
 ## Pending QA Issues
 
 ### Mobile Joystick Touch (HIGH PRIORITY)
