@@ -9,11 +9,9 @@ node_modules
 
 coverage/
 coverage/*
-bundle-stats.html
-lighthouse-report.html
-lighthouse-report.json
 
 TODO.md
 docs/TODO.md
-lint.log
-test.log
+
+logs/
+logs/*

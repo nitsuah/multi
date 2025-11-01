@@ -360,8 +360,8 @@ npm run build       # Production build
 ```
 darkmoon/
 ├── docs/              # Documentation and guides
-│   ├── FEEDBACK.md    # QA feedback (priority #1)
-│   ├── PHASE#.md      # Feature specs
+│   ├── FEEDBACK.md    # QA feedback (priorities)
+│   ├── PHASE1.md      # Feature specs (1,2,3,...)
 │   └── AGENT_GUIDE.md # This file
 ├── src/
 │   ├── __tests__/     # Test files

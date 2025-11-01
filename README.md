@@ -46,16 +46,29 @@ The app will be available at `http://localhost:4444`.
 
 ## 📜 Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server with hot reload |
-| `npm run build` | Build for production |
-| `npm start` | Start production server |
-| `npm run lint` | Lint code with ESLint (auto-fix enabled) |
-| `npm run format` | Format code with Prettier |
-| `npm run format:check` | Check code formatting |
-| `npm run typecheck` | Run TypeScript type checking |
-| `npm test` | Run test suite with Vitest |
+| Script                 | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
+| `npm run dev`          | Start development server with hot reload                 |
+| `npm run build`        | Build for production                                     |
+| `npm start`            | Start production server                                  |
+| `npm run lint`         | Lint code with ESLint (auto-fix enabled)                 |
+| `npm run format`       | Format code with Prettier                                |
+| `npm run format:check` | Check code formatting                                    |
+| `npm run typecheck`    | Run TypeScript type checking                             |
+| `npm test`             | Run test suite with Vitest                               |
+| `npm run ci`           | Run all CI checks locally (typecheck, lint, test, build) |
+
+### Manual CI Check
+
+Before pushing, you can run the full CI pipeline locally:
+
+```bash
+# PowerShell (Windows)
+.\scripts\ci-check.ps1
+
+# Bash (Linux/Mac)
+./scripts/ci-check.sh
+```
 
 ## 📁 Project Structure
 
@@ -64,6 +77,8 @@ multi/
 ├── .github/              # GitHub Actions CI/CD workflows
 ├── .husky/               # Git hooks for pre-commit validation
 ├── config/               # Configuration files (ESLint, Prettier, Vitest)
+├── logs/                 # Build reports and logs (gitignored)
+├── scripts/              # Developer utility scripts
 ├── src/
 │   ├── __tests__/        # Test files
 │   ├── assets/           # Static assets
