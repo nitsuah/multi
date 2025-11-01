@@ -696,6 +696,17 @@ input:focus {
   }
 }
 
+@keyframes confettiBurst {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) rotate(720deg);
+    opacity: 0;
+  }
+}
+
 /* Upcoming Features Section */
 .upcoming-features {
   background: rgba(0, 0, 0, 0.5);

@@ -623,9 +623,9 @@ const PlayerCharacter = React.forwardRef<
                 document.body.appendChild(flashOverlay);
                 setTimeout(() => flashOverlay.remove(), 800);
 
-                // Show victory text
+                // Show victory text with fireworks
                 const victoryText = document.createElement("div");
-                victoryText.textContent = "🎉 TAG! 🎉";
+                victoryText.textContent = "🎉🎆 TAG! ��🎉";
                 victoryText.style.position = "fixed";
                 victoryText.style.top = "50%";
                 victoryText.style.left = "50%";
@@ -641,6 +641,32 @@ const PlayerCharacter = React.forwardRef<
                   "popIn 0.5s ease-out, fadeOut 1s ease-out 0.5s";
                 document.body.appendChild(victoryText);
                 setTimeout(() => victoryText.remove(), 1500);
+
+                // Confetti burst!
+                for (let i = 0; i < 50; i++) {
+                  const confetti = document.createElement("div");
+                  confetti.textContent = ["🎉", "🎊", "⭐", "✨", "💫"][
+                    Math.floor(Math.random() * 5)
+                  ];
+                  confetti.style.position = "fixed";
+                  confetti.style.left = "50%";
+                  confetti.style.top = "50%";
+                  confetti.style.fontSize = "24px";
+                  confetti.style.pointerEvents = "none";
+                  confetti.style.zIndex = "9998";
+
+                  const angle = (Math.PI * 2 * i) / 50;
+                  const velocity = 200 + Math.random() * 200;
+                  const tx = Math.cos(angle) * velocity;
+                  const ty = Math.sin(angle) * velocity;
+
+                  confetti.style.animation = `confettiBurst 1.5s ease-out forwards`;
+                  confetti.style.setProperty("--tx", `${tx}px`);
+                  confetti.style.setProperty("--ty", `${ty}px`);
+
+                  document.body.appendChild(confetti);
+                  setTimeout(() => confetti.remove(), 1500);
+                }
 
                 lastTagCheck.current = now;
               }
@@ -676,9 +702,9 @@ const PlayerCharacter = React.forwardRef<
                   document.body.appendChild(flashOverlay);
                   setTimeout(() => flashOverlay.remove(), 800);
 
-                  // Show victory text
+                  // Show victory text with fireworks
                   const victoryText = document.createElement("div");
-                  victoryText.textContent = "🎉 TAG! 🎉";
+                  victoryText.textContent = "🎉🎆 TAG! ��🎉";
                   victoryText.style.position = "fixed";
                   victoryText.style.top = "50%";
                   victoryText.style.left = "50%";
@@ -694,6 +720,32 @@ const PlayerCharacter = React.forwardRef<
                     "popIn 0.5s ease-out, fadeOut 1s ease-out 0.5s";
                   document.body.appendChild(victoryText);
                   setTimeout(() => victoryText.remove(), 1500);
+
+                  // Confetti burst!
+                  for (let i = 0; i < 50; i++) {
+                    const confetti = document.createElement("div");
+                    confetti.textContent = ["🎉", "🎊", "⭐", "✨", "💫"][
+                      Math.floor(Math.random() * 5)
+                    ];
+                    confetti.style.position = "fixed";
+                    confetti.style.left = "50%";
+                    confetti.style.top = "50%";
+                    confetti.style.fontSize = "24px";
+                    confetti.style.pointerEvents = "none";
+                    confetti.style.zIndex = "9998";
+
+                    const angle = (Math.PI * 2 * i) / 50;
+                    const velocity = 200 + Math.random() * 200;
+                    const tx = Math.cos(angle) * velocity;
+                    const ty = Math.sin(angle) * velocity;
+
+                    confetti.style.animation = `confettiBurst 1.5s ease-out forwards`;
+                    confetti.style.setProperty("--tx", `${tx}px`);
+                    confetti.style.setProperty("--ty", `${ty}px`);
+
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 1500);
+                  }
 
                   if (socketClient) {
                     socketClient.emit("player-tagged", {
