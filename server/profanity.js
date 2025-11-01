@@ -1,20 +1,24 @@
+import {
+  BAD_WORDS,
+  escapeRegex,
+  filterProfanity,
+} from "../src/lib/constants/profanity.ts";
+
 export function getBadWordsFromEnv(envVar) {
-  if (!envVar) return null;
-  return envVar.split(',').map((w) => w.trim()).filter(Boolean);
+  if (!envVar) return [...BAD_WORDS]; // Use shared constant as default
+  return envVar
+    .split(",")
+    .map((w) => w.trim())
+    .filter(Boolean);
 }
 
-export function escapeRegex(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+export function filterText(text, customWords = null) {
+  // If custom words provided from env, use them; otherwise use shared BAD_WORDS
+  const wordsToUse = customWords || [...BAD_WORDS];
+  return filterProfanity(text, customWords ? wordsToUse : []);
 }
 
-export function filterText(text, badWords) {
-  if (!text) return text;
-  let filtered = text;
-  badWords.forEach((word) => {
-    const re = new RegExp(escapeRegex(word), 'gi');
-    filtered = filtered.replace(re, '*'.repeat(word.length));
-  });
-  return filtered;
-}
+// Re-export for backwards compatibility
+export { escapeRegex, filterProfanity };
 
-export default { getBadWordsFromEnv, filterText, escapeRegex };
+export default { getBadWordsFromEnv, filterText, escapeRegex, filterProfanity };

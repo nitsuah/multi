@@ -119,9 +119,6 @@ a:focus {
     font-size: 14px;
     padding: 8px 10px;
   }
-  .moon-background {
-    font-size: 80px !important;
-  }
 }
 
 #root {
@@ -473,10 +470,7 @@ a:focus {
   display: flex;
   justify-content: center;
   align-items: center;
-  position: absolute;
-  bottom: 0;
   width: 100%;
-  left: 0;
   padding: 2rem 0;
   margin-top: 3rem;
 }

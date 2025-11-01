@@ -46,8 +46,7 @@ export class CollisionSystem {
       )
     );
 
-    // Add some obstacles in the world
-    // Corner obstacles
+    // Add corner obstacles and moon rocks to match visible geometry
     this.boundaries.push(
       new THREE.Box3(new THREE.Vector3(15, 0, 15), new THREE.Vector3(20, 3, 20))
     );

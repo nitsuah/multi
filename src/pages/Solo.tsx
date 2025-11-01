@@ -33,6 +33,7 @@ import "../styles/App.css";
 import { getSoundManager } from "../components/SoundManager";
 import PauseMenu from "../components/PauseMenu";
 import { useNavigate } from "react-router-dom";
+import { filterProfanity } from "../lib/constants/profanity";
 
 // Solo mode: no reconnection needed
 const MAX_CHAT_MESSAGES = 50;
@@ -1324,49 +1325,9 @@ const Solo: React.FC = () => {
     };
   }, [socketClient]);
 
-  // Client-side profanity filter for solo mode
-  const filterProfanity = (text: string): string => {
-    const badWords = [
-      "fuck",
-      "shit",
-      "damn",
-      "bitch",
-      "asshole",
-      "bastard",
-      "crap",
-      "piss",
-      "dick",
-      "cock",
-      "pussy",
-      "fag",
-      "faggot",
-      "nigger",
-      "nigga",
-      "retard",
-      "whore",
-      "slut",
-      "cunt",
-      "motherfucker",
-      "fucker",
-      "dipshit",
-      "dumbass",
-      "jackass",
-    ];
-
-    let filtered = text;
-    badWords.forEach((word) => {
-      const regex = new RegExp(
-        word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-        "gi"
-      );
-      filtered = filtered.replace(regex, "*".repeat(word.length));
-    });
-    return filtered;
-  };
-
   const handleSendMessage = useCallback(
     (message: string) => {
-      // Apply profanity filter
+      // Apply profanity filter (imported from shared constants)
       const filteredMessage = filterProfanity(message);
 
       const chatMessage: ChatMessage = {
