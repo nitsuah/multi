@@ -291,12 +291,16 @@ const PlayerCharacter = React.forwardRef<
   const lastTagCheck = useRef(0);
   const frameCounter = useRef(0);
 
-  // Jump mechanics
+  // Jump mechanics - Moon-like low gravity physics
   const isJumping = useRef(false);
   const verticalVelocity = useRef(0);
-  const JUMP_FORCE = 0.15;
-  const GRAVITY = 0.008;
+  const jumpHoldTime = useRef(0); // Track how long space is held
+  const JUMP_INITIAL_FORCE = 0.08; // Initial thrust
+  const JUMP_HOLD_FORCE = 0.12; // Additional thrust while holding
+  const JUMP_MAX_HOLD_TIME = 0.5; // Max seconds to hold for extra height
+  const GRAVITY = 0.003; // Moon gravity (much lower)
   const GROUND_Y = 0.5;
+  const AIR_RESISTANCE = 0.98; // Floaty feeling (slight drag)
 
   // Expose reset function to parent via ref
   React.useImperativeHandle(ref, () => ({
@@ -619,27 +623,48 @@ const PlayerCharacter = React.forwardRef<
       }
     }
 
-    // Jump mechanics (independent of horizontal movement)
-    if (
-      keysPressedRef.current[SPACE] &&
-      !isJumping.current &&
-      meshRef.current.position.y <= GROUND_Y + 0.01
-    ) {
+    // Jump mechanics (independent of horizontal movement) - Floaty jetpack style
+    const isOnGround = meshRef.current.position.y <= GROUND_Y + 0.01;
+
+    if (keysPressedRef.current[SPACE] && isOnGround && !isJumping.current) {
       // Start jump
       isJumping.current = true;
-      verticalVelocity.current = JUMP_FORCE;
+      verticalVelocity.current = JUMP_INITIAL_FORCE;
+      jumpHoldTime.current = 0;
     }
 
-    // Apply gravity and update vertical position
-    if (isJumping.current) {
+    // Apply continuous thrust while space is held (jetpack style)
+    if (isJumping.current && keysPressedRef.current[SPACE]) {
+      if (jumpHoldTime.current < JUMP_MAX_HOLD_TIME) {
+        jumpHoldTime.current += delta;
+        // Gradual thrust that decreases over time
+        const thrustMultiplier = 1 - jumpHoldTime.current / JUMP_MAX_HOLD_TIME;
+        verticalVelocity.current += JUMP_HOLD_FORCE * delta * thrustMultiplier;
+      }
+    }
+
+    // Apply moon gravity and air resistance
+    if (isJumping.current || !isOnGround) {
       verticalVelocity.current -= GRAVITY;
+      verticalVelocity.current *= AIR_RESISTANCE; // Floaty feeling
       meshRef.current.position.y += verticalVelocity.current;
+
+      // Apply horizontal air drift (maintain momentum)
+      if (velocity.current.length() > 0) {
+        const airDrift = velocity.current.clone().multiplyScalar(0.95);
+        meshRef.current.position.x += airDrift.x * delta * 10;
+        meshRef.current.position.z += airDrift.z * delta * 10;
+      }
 
       // Check if landed
       if (meshRef.current.position.y <= GROUND_Y) {
         meshRef.current.position.y = GROUND_Y;
         isJumping.current = false;
         verticalVelocity.current = 0;
+        jumpHoldTime.current = 0;
+        // Play landing sound
+        const soundMgr = getSoundManager();
+        soundMgr.playJumpSound(); // Reuse jump sound for landing
       }
     }
 
@@ -1019,12 +1044,34 @@ const Solo: React.FC = () => {
       e.preventDefault(); // Disable right-click context menu
     };
 
+    // Fix for stuck keys when focus is lost
+    const handleWindowBlur = () => {
+      // Reset all key states when window loses focus
+      setKeysPressed({
+        [W]: false,
+        [A]: false,
+        [S]: false,
+        [D]: false,
+        [Q]: false,
+        [E]: false,
+        [SHIFT]: false,
+        [SPACE]: false,
+      });
+      // Clear visual key display
+      if (keyDisplayRef.current) {
+        [W, A, S, D, Q, E, SHIFT, SPACE].forEach((key) => {
+          keyDisplayRef.current?.up(key);
+        });
+      }
+    };
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mouseup", handleMouseUp);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("contextmenu", handleContextMenu);
+    window.addEventListener("blur", handleWindowBlur);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
@@ -1033,6 +1080,7 @@ const Solo: React.FC = () => {
       window.removeEventListener("mouseup", handleMouseUp);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("contextmenu", handleContextMenu);
+      window.removeEventListener("blur", handleWindowBlur);
       // Clean up KeyDisplay elements
       if (keyDisplayRef.current) {
         [W, A, S, D, Q, E, SHIFT, SPACE].forEach((key) => {
@@ -1323,30 +1371,57 @@ const Solo: React.FC = () => {
       <PerformanceMonitor onPerformanceChange={setCurrentFPS} />
       <QualitySettings onChange={setQuality} currentFPS={currentFPS} />
 
-      {/* Sound toggle button */}
-      <button
-        onClick={() => {
-          const isMuted = soundManager.current.toggleMute();
-          setIsSoundMuted(isMuted);
-          console.log(isMuted ? "Sound muted" : "Sound unmuted");
-        }}
+      {/* Control buttons - top left */}
+      <div
         style={{
           position: "fixed",
           top: "10px",
           left: "10px",
-          padding: "8px 12px",
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
-          border: "1px solid rgba(255, 255, 255, 0.3)",
-          borderRadius: "4px",
-          color: "white",
-          cursor: "pointer",
-          fontSize: "20px",
+          display: "flex",
+          gap: "8px",
           zIndex: 1000,
         }}
-        title="Toggle sound"
       >
-        {isSoundMuted ? "🔇" : "🔊"}
-      </button>
+        {/* Sound toggle button */}
+        <button
+          onClick={() => {
+            const isMuted = soundManager.current.toggleMute();
+            setIsSoundMuted(isMuted);
+            console.log(isMuted ? "Sound muted" : "Sound unmuted");
+          }}
+          style={{
+            padding: "8px 12px",
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+            borderRadius: "4px",
+            color: "white",
+            cursor: "pointer",
+            fontSize: "20px",
+          }}
+          title="Toggle sound"
+        >
+          {isSoundMuted ? "🔇" : "🔊"}
+        </button>
+
+        {/* Chat toggle button */}
+        <button
+          onClick={toggleChat}
+          style={{
+            padding: "8px 12px",
+            backgroundColor: chatVisible
+              ? "rgba(74, 144, 226, 0.8)"
+              : "rgba(0, 0, 0, 0.7)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+            borderRadius: "4px",
+            color: "white",
+            cursor: "pointer",
+            fontSize: "20px",
+          }}
+          title="Toggle chat (C key)"
+        >
+          �
+        </button>
+      </div>
       <ChatBox
         isVisible={chatVisible}
         onToggle={toggleChat}
